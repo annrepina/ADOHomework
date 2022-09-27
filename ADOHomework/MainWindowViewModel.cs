@@ -19,13 +19,19 @@ namespace ADOHomework
 		private string _serverName;
 		private bool _isNotConnected;
 		private bool _hasCorrectServerName;
-		//private const string _dataBaseName = "ADOHomework";
-		//private bool _hasDataBaseName;
-		//private bool _canTryToConnect;
+        //private const string _dataBaseName = "ADOHomework";
+        //private bool _hasDataBaseName;
+        //private bool _canTryToConnect;
+        //private UserBuilder _userBuilder;
+ 
 
-		public event PropertyChangedEventHandler? PropertyChanged;
+        private const int DefaultNumberOfUsers = 10;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         public ObservableCollection<User> Users{ get; set; }
+
+
 
         /// <summary>
         /// Есть подкючение?
@@ -74,44 +80,6 @@ namespace ADOHomework
             }
 		}
 
-        //public string DataBaseName 
-        //{ 
-        //    get => _dataBaseName;
-
-        //    set 
-        //    {
-        //        _dataBaseName = value;
-
-        //        HasDataBaseName = true;
-        //    }
-        //}
-
-   //     public bool HasDataBaseName 
-   //     { 
-   //         get => _hasDataBaseName; 
-
-   //         set
-			//{
-   //             _hasDataBaseName = value;
-
-   //             CanTryToConnect = _hasCorrectConnectionString && _hasDataBaseName;
-
-   //             OnPropertyChanged(nameof(HasDataBaseName));
-			//}
-   //     }
-
-  //      public bool CanTryToConnect
-		//{
-  //          get => _canTryToConnect;
-
-  //          set
-		//	{
-  //              _canTryToConnect = value;
-
-  //              OnPropertyChanged(nameof(CanTryToConnect));
-		//	}
-		//}
-
         public DelegateCommand OnFillDBCommand { get; }
 
         //public DelegateCommand OnClickCommand { get; }
@@ -128,7 +96,8 @@ namespace ADOHomework
             //_hasDataBaseName = false;
             //_canTryToConnect = false;
             Users = new ObservableCollection<User>();
-        }
+            //_userBuilder = new UserBuilder();
+    }
 
         private async void OnFillDBAsync()
         {
@@ -155,6 +124,36 @@ namespace ADOHomework
                     CreateDatabase(connection);
 
                     CreateTables(connection);
+
+                    CreateProcedureInsertUsers(connection);
+
+                    FillUsersTable(connection);
+
+                    //ReadUsersFromDB(connection);
+
+                    string sqlExpression = "SELECT * FROM Users";
+
+                    SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
+
+                    // из microsoft
+                    // Предоставляет способ чтения потока строк последовательного доступа из базы данных SQL Server
+                    using (SqlDataReader reader = await sqlCommand.ExecuteReaderAsync())
+                    {
+                        // ReadAsync - возвращеает true, если есть что читать, если нет - false
+                        while (await reader.ReadAsync())
+                        {
+                            var user = new User
+                            {
+                                Id = reader.GetInt32(0),
+                                Name = reader.GetString(1),
+                                PhoneNumber = reader.GetString(2)
+                            };
+
+                            Users.Add(user);
+                        }
+                    }
+
+                    var a = Users.Count;
 
                     //// Создаем новую комманду sql 
                     //// Задаем текст запроса
@@ -215,6 +214,10 @@ namespace ADOHomework
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
 
+        /// <summary>
+        /// Создать Базу данных
+        /// </summary>
+        /// <param name="connection">SQL соединение</param>
         private async void CreateDatabase(SqlConnection connection)
         {
             // создаем запрос для созданя бд
@@ -229,6 +232,10 @@ namespace ADOHomework
             await command.ExecuteNonQueryAsync();
         }
 
+        /// <summary>
+        /// Создать таблицы в БД
+        /// </summary>
+        /// <param name="connection">SQL соединение</param>
         private async void CreateTables(SqlConnection connection)
         {
             // Запрос
@@ -244,7 +251,7 @@ namespace ADOHomework
                     "Id int PRIMARY KEY IDENTITY NOT NULL,\n" +
                     "CustomerId int REFERENCES Users (Id) NOT NULL,\n" +
                     "Summ int NOT NULL,\n" +
-                    "[Date] date NOT NULL\n" +
+                    "[Date] datetime NOT NULL\n" +
                 ")";
 
             // Создаем новую комманду sql 
@@ -256,11 +263,102 @@ namespace ADOHomework
             await command.ExecuteNonQueryAsync();
         }
 
-        private async void FillTablesByDefault()
+        /// <summary>
+        /// Создать хранимую процедуру для вставки значений в таблицу Users
+        /// </summary>
+        /// <param name="connection">SQL соединение</param>
+        private async void CreateProcedureInsertUsers(SqlConnection connection)
         {
-            string 
+            string createProcedureStr =
+                            "CREATE PROCEDURE[dbo].[InsertIntoUsers]\n" +
+                                "@name varchar(100),\n" +
+                                "@phoneNumber varchar(11)\n" +
+                            "AS\n" +
+                                "INSERT INTO Users([Name], PhoneNumber)\n" +
+                                "VALUES(@name, @phoneNumber)\n";
+
+            SqlCommand command = new SqlCommand(createProcedureStr, connection);
+
+            await command.ExecuteNonQueryAsync();
         }
-            
+
+        /// <summary>
+        /// Заполнить таблицу юзеров
+        /// </summary>
+        private async void FillUsersTable(SqlConnection connection)
+        {
+            // Создаем транзакцию
+            SqlTransaction transaction = connection.BeginTransaction();
+
+            // Создаем список команд
+            List<SqlCommand> commands = new List<SqlCommand>();
+
+            UserBuilder userBuilder = new UserBuilder();
+
+            for (int i = 0; i < DefaultNumberOfUsers; ++i)
+            {
+                // создаем команду
+                SqlCommand command = new SqlCommand("InsertIntoUsers", connection);
+                command.Transaction = transaction;
+                command.CommandType = System.Data.CommandType.StoredProcedure;
+
+                // Создаем юзера
+                userBuilder.BuildUserRandomly();
+                User user = userBuilder.GetResult();
+
+                SqlParameter nameParam = new SqlParameter("@name", user.Name);
+                command.Parameters.Add(nameParam);
+
+                SqlParameter phoneNumberParam = new SqlParameter("@phoneNumber", user.PhoneNumber);
+                command.Parameters.Add(phoneNumberParam);
+
+                commands.Add(command);
+            }
+
+            try
+            {
+                for(int i = 0; i < DefaultNumberOfUsers; ++i)
+                {
+                    var success = await commands[i].ExecuteNonQueryAsync();
+                }
+
+                await transaction.CommitAsync();
+            }
+
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+
+                await transaction.RollbackAsync();
+            }
+        }
+
+        private async void ReadUsersFromDB(SqlConnection connection)
+        {
+            string sqlExpression = "SELECT * FROM Users";
+
+            SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
+
+            // из microsoft
+            // Предоставляет способ чтения потока строк последовательного доступа из базы данных SQL Server
+            using (SqlDataReader reader = await sqlCommand.ExecuteReaderAsync())
+            {
+                // ReadAsync - возвращеает true, если есть что читать, если нет - false
+                while (await reader.ReadAsync())
+                {
+                    var user = new User
+                    {
+                        Id = reader.GetInt32(0),
+                        Name = reader.GetString(1),
+                        PhoneNumber = reader.GetString(2)
+                    };
+
+                    Users.Add(user);
+                }
+            }
+
+        }
+
 
     }
 }

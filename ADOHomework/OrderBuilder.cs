@@ -14,41 +14,60 @@ namespace ADOHomework
         public OrderBuilder()
         {
             _random = new Random();
+            _maxBoundForIdRandom = 1;
+            _usersId = new List<int>();
         }
 
-        public const int minSumm = 5000;
-        public const int maxSumm = 99999;
+        public const int MinSumm = 5000;
+        public const int MaxSumm = 99999;
 
-        public const int minYear = 2010;
-        public const int maxYear = 2013;
+        //public const int MinYear = 2010;
+        //public const int MaxYear = 2013;
 
-        public const int minMonth = 1;
-        public const int maxMonth = 12;
-        public const int minDay = 2013;
-        public const int maxDay = 2013;
+        //public const int MinMonth = 1;
+        //public const int MaxMonth = 12;
+        //public const int MinDay = 2013;
+        //public const int MaxDay = 2013;
 
+        private int _maxBoundForIdRandom;
 
         private Random _random;
+        private List<int> _usersId;
 
-        public void BuildOrder(List<int> usersId)
+        public List<int> UsersId 
+        { 
+            set
+            {
+                _usersId = value;
+
+                _maxBoundForIdRandom = _usersId.Count - 1;
+            }
+        }
+
+        public void BuildOrder()
         {
-            SetUserIdRandomly(usersId);
+            SetUserIdRandomly();
             SetSummRandomly();
             SetDateTimeRandomly();
         }
 
-        private void SetUserIdRandomly(List<int> usersId)
+        private void SetUserIdRandomly()
         {
-            int maxBound = usersId.Count();
+            if(_maxBoundForIdRandom < 0)
+                _maxBoundForIdRandom = _usersId.Count - 1;
 
-            int userId = _random.Next(1, maxBound);
+            int indexOfUserId = _random.Next(0, _maxBoundForIdRandom);
 
-            _element.Id = userId;
+            _element.UserId = _usersId[indexOfUserId];
+
+            ServiceFunctions.Swap(_usersId, indexOfUserId, _maxBoundForIdRandom);
+
+            --_maxBoundForIdRandom;
         }
 
         private void SetSummRandomly()
         {
-            int summ = _random.Next(minSumm, maxSumm);
+            int summ = _random.Next(MinSumm, MaxSumm);
 
             _element.Summ = summ;
         }
@@ -59,7 +78,7 @@ namespace ADOHomework
 
             int range = (DateTime.Now - start).Days;
 
-            DateTime res = start.AddDays(range); 
+            DateTime res = start.AddDays(_random.Next(range)); 
 
             _element.DateTime = res;
         }

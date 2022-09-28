@@ -19,13 +19,16 @@ namespace ADOHomework
 		private string _serverName;
 		private bool _isNotConnected;
 		private bool _hasCorrectServerName;
+        private bool _isConnected;
+
         //private const string _dataBaseName = "ADOHomework";
         //private bool _hasDataBaseName;
         //private bool _canTryToConnect;
         //private UserBuilder _userBuilder;
- 
 
-        private const int DefaultNumberOfUsers = 10;
+
+        public const int DefaultNumberOfUsers = 10;
+        public const int DefaultNumberOfOrders = 15;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -36,16 +39,31 @@ namespace ADOHomework
         /// <summary>
         /// Есть подкючение?
         /// </summary>
-        public bool IsNotConnected 
+        public bool IsConnected 
         { 
-            get => _isNotConnected; 
+            get => _isConnected; 
 
             set
 			{
+                _isConnected = value;
+
+                OnPropertyChanged(nameof(IsConnected));
+			}
+        }
+
+        /// <summary>
+        /// Нет подкючения?
+        /// </summary>
+        public bool IsNotConnected
+        {
+            get => _isNotConnected;
+
+            set
+            {
                 _isNotConnected = value;
 
                 OnPropertyChanged(nameof(IsNotConnected));
-			}
+            }
         }
 
         /// <summary>
@@ -87,17 +105,13 @@ namespace ADOHomework
         
         public MainWindowViewModel()
         {
-            //OnClickCommand = new DelegateCommand(OnClickAsync);
             OnFillDBCommand = new DelegateCommand(OnFillDBAsync);
             _serverName = "";
             _isNotConnected = true;
             _hasCorrectServerName = false;
-            //_dataBaseName = "ADOHomework";
-            //_hasDataBaseName = false;
-            //_canTryToConnect = false;
             Users = new ObservableCollection<User>();
             //_userBuilder = new UserBuilder();
-    }
+        }
 
         private async void OnFillDBAsync()
         {
@@ -113,91 +127,27 @@ namespace ADOHomework
 				    // Открываем подключение
 				    await connection.OpenAsync();
 
-                    // При уда
                     IsNotConnected = false;
+                    IsConnected = true;
 
 				    // Выводим айди нашего сеанса
 				    MessageBox.Show($"Connected: {connection.ClientConnectionId}");
-
-                    //string sqlExpression = "USE ADOHomework\n INSERT INTO Users VALUES(@name, @phonember)";
 
                     CreateDatabase(connection);
 
                     CreateTables(connection);
 
                     CreateProcedureInsertUsers(connection);
+                    CreateProcedureInsertOrders(connection);
 
                     FillUsersTable(connection);
+                    ReadUsersFromDB(connection);
 
-                    //ReadUsersFromDB(connection);
-
-                    string sqlExpression = "SELECT * FROM Users";
-
-                    SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
-
-                    // из microsoft
-                    // Предоставляет способ чтения потока строк последовательного доступа из базы данных SQL Server
-                    using (SqlDataReader reader = await sqlCommand.ExecuteReaderAsync())
-                    {
-                        // ReadAsync - возвращеает true, если есть что читать, если нет - false
-                        while (await reader.ReadAsync())
-                        {
-                            var user = new User
-                            {
-                                Id = reader.GetInt32(0),
-                                Name = reader.GetString(1),
-                                PhoneNumber = reader.GetString(2)
-                            };
-
-                            Users.Add(user);
-                        }
-                    }
-
-                    var a = Users.Count;
-
-                    //// Создаем новую комманду sql 
-                    //// Задаем текст запроса
-                    //// Создать БД
-                    //SqlCommand command = new SqlCommand(sqlExpression, connection);
-
-                    ////////command.Parameters.AddWithValue("@name", "Andrew");
-                    ////////            command.Parameters.AddWithValue("@phonember", "89006788778");
-
-                    //////// Создаем sql параметр
-                    ////SqlParameter databaseNameParam = new SqlParameter("@ADOHomework", System.Data.SqlDbType.Variant);
-                    ////databaseNameParam.Value = "ADOHomework";
-
-                    ////command.Parameters.Add(databaseNameParam);
-
-                    //// Выполняем команду
-                    //await command.ExecuteNonQueryAsync();
+                    FillOrdersTable(connection);
 
                     MessageBox.Show($"Database called {connection.Database} created");
 
-
-
-
-                    // Заполнение таблицы значениями по умолчанию
-
-                    //            // из microsoft
-                    //            // Предоставляет способ чтения потока строк последовательного доступа из базы данных SQL Server
-                    //            using (SqlDataReader reader = await command.ExecuteReaderAsync())
-                    //{
-                    //                // ReadAsync - возвращеает true, если есть что читать, если нет - false
-                    //                while (await reader.ReadAsync())
-                    //                {
-                    //                    var user = new User
-                    //                    {
-                    //                        Id = reader.GetInt32(0),
-                    //                        Name = reader.GetString(1),
-                    //                        PhoneNumber = reader.GetString(2)
-                    //                    };
-
-                    //                    Users.Add(user);
-                    //                }
-                    //}
-
-                    //SqlCommand sqlCommand = new SqlCommand();
+                    var a = Users.Count;
                 }
             }
             catch (Exception ex)
@@ -218,7 +168,7 @@ namespace ADOHomework
         /// Создать Базу данных
         /// </summary>
         /// <param name="connection">SQL соединение</param>
-        private async void CreateDatabase(SqlConnection connection)
+        private void CreateDatabase(SqlConnection connection)
         {
             // создаем запрос для созданя бд
             string sqlExpression = $"CREATE DATABASE ADOHomework";
@@ -229,14 +179,14 @@ namespace ADOHomework
             SqlCommand command = new SqlCommand(sqlExpression, connection);
 
             // Выполняем команду
-            await command.ExecuteNonQueryAsync();
+            command.ExecuteNonQuery();
         }
 
         /// <summary>
         /// Создать таблицы в БД
         /// </summary>
         /// <param name="connection">SQL соединение</param>
-        private async void CreateTables(SqlConnection connection)
+        private void CreateTables(SqlConnection connection)
         {
             // Запрос
             string sqlExpression = "USE ADOHomework\n" +
@@ -260,14 +210,14 @@ namespace ADOHomework
             SqlCommand command = new SqlCommand(sqlExpression, connection);
 
             // Выполняем команду
-            await command.ExecuteNonQueryAsync();
+            command.ExecuteNonQuery();
         }
 
         /// <summary>
         /// Создать хранимую процедуру для вставки значений в таблицу Users
         /// </summary>
         /// <param name="connection">SQL соединение</param>
-        private async void CreateProcedureInsertUsers(SqlConnection connection)
+        private void CreateProcedureInsertUsers(SqlConnection connection)
         {
             string createProcedureStr =
                             "CREATE PROCEDURE[dbo].[InsertIntoUsers]\n" +
@@ -279,27 +229,21 @@ namespace ADOHomework
 
             SqlCommand command = new SqlCommand(createProcedureStr, connection);
 
-            await command.ExecuteNonQueryAsync();
+            command.ExecuteNonQuery();
         }
 
         /// <summary>
         /// Заполнить таблицу юзеров
         /// </summary>
-        private async void FillUsersTable(SqlConnection connection)
+        /// <param name="connection">SQL соединение</param>
+        private void FillUsersTable(SqlConnection connection)
         {
-            // Создаем транзакцию
-            SqlTransaction transaction = connection.BeginTransaction();
-
-            // Создаем список команд
-            List<SqlCommand> commands = new List<SqlCommand>();
-
             UserBuilder userBuilder = new UserBuilder();
 
             for (int i = 0; i < DefaultNumberOfUsers; ++i)
             {
                 // создаем команду
                 SqlCommand command = new SqlCommand("InsertIntoUsers", connection);
-                command.Transaction = transaction;
                 command.CommandType = System.Data.CommandType.StoredProcedure;
 
                 // Создаем юзера
@@ -312,28 +256,15 @@ namespace ADOHomework
                 SqlParameter phoneNumberParam = new SqlParameter("@phoneNumber", user.PhoneNumber);
                 command.Parameters.Add(phoneNumberParam);
 
-                commands.Add(command);
-            }
-
-            try
-            {
-                for(int i = 0; i < DefaultNumberOfUsers; ++i)
-                {
-                    var success = await commands[i].ExecuteNonQueryAsync();
-                }
-
-                await transaction.CommitAsync();
-            }
-
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-
-                await transaction.RollbackAsync();
+                command.ExecuteNonQuery();
             }
         }
 
-        private async void ReadUsersFromDB(SqlConnection connection)
+        /// <summary>
+        /// Чтение юзеров из ДБ
+        /// </summary>
+        /// <param name="connection"></param>
+        private void ReadUsersFromDB(SqlConnection connection)
         {
             string sqlExpression = "SELECT * FROM Users";
 
@@ -341,10 +272,10 @@ namespace ADOHomework
 
             // из microsoft
             // Предоставляет способ чтения потока строк последовательного доступа из базы данных SQL Server
-            using (SqlDataReader reader = await sqlCommand.ExecuteReaderAsync())
+            using (SqlDataReader reader = sqlCommand.ExecuteReader())
             {
                 // ReadAsync - возвращеает true, если есть что читать, если нет - false
-                while (await reader.ReadAsync())
+                while (reader.Read())
                 {
                     var user = new User
                     {
@@ -356,9 +287,70 @@ namespace ADOHomework
                     Users.Add(user);
                 }
             }
-
         }
 
+        /// <summary>
+        /// Создать хранимую процедуру для вставки значения в таблиицу заказов
+        /// </summary>
+        /// <param name="connection">SQL соединение</param>
+        private void CreateProcedureInsertOrders(SqlConnection connection)
+        {
+            string createProcedureStr =
+                "CREATE PROCEDURE[dbo].[InsertIntoOrders]\n" +
+                    "@customerId int,\n" +
+                    "@sum int,\n" +
+                    "@date datetime\n" +
+                "AS\n" +
+                    "INSERT INTO Orders (CustomerId, Summ, [Date])\n" +
+                    "VALUES (@customerId, @sum, @date)\n";
 
+            SqlCommand command = new SqlCommand(createProcedureStr, connection);
+
+            command.ExecuteNonQuery();
+        }
+
+        private void FillOrdersTable(SqlConnection connection)
+        {
+            OrderBuilder orderBuilder = new OrderBuilder();
+            orderBuilder.UsersId = getUsersId();
+
+            for (int i = 0; i < DefaultNumberOfOrders; ++i)
+            {
+                // создаем команду
+                SqlCommand command = new SqlCommand("InsertIntoOrders", connection);
+                command.CommandType = System.Data.CommandType.StoredProcedure;
+
+                // Создаем заказ
+                orderBuilder.BuildOrder();
+                Order order = orderBuilder.GetResult();
+
+                SqlParameter customerIdparam = new SqlParameter("@customerId", order.UserId);
+                command.Parameters.Add(customerIdparam);
+
+                SqlParameter sumParam = new SqlParameter("@sum", order.Summ);
+                command.Parameters.Add(sumParam);
+
+                SqlParameter dateParam = new SqlParameter("@date", order.DateTime);
+                command.Parameters.Add(dateParam);
+
+                command.ExecuteNonQuery();
+            }
+        }
+        
+        /// <summary>
+        /// Передает список id юзеров 
+        /// </summary>
+        /// <returns></returns>
+        private List<int> getUsersId()
+        {
+            List<int> usersId = new List<int>();
+
+            foreach(var user in Users)
+            {
+                usersId.Add(user.Id);
+            }
+
+            return usersId;
+        }
     }
 }

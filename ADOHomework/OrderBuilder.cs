@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ADOHomework.Model.basics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace ADOHomework
 {
-    /// <summary>
-    /// Создает заказы
-    /// </summary>
-    public class OrderBuilder : Builder<Order>
+	/// <summary>
+	/// Создает заказы
+	/// </summary>
+	public class OrderBuilder : Builder<Order>
     {
         public OrderBuilder()
         {

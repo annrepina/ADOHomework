@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ADOHomework.Model.basics;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ADOHomework
 {
-    public class UserBuilder : Builder<User>
+	public class UserBuilder : Builder<User>
     {
         public UserBuilder()
         {

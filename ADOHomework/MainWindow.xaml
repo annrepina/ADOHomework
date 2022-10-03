@@ -20,16 +20,29 @@
             <RowDefinition Height="500"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <TextBlock Text="Имя сервера" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="5" FontWeight="Bold"/>
+        <TextBlock Text="Server Name" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="5" FontWeight="Bold"/>
         <TextBox Grid.Row="1" Grid.Column="0" Width="200" MaxWidth="250" VerticalAlignment="Center" HorizontalAlignment="Left" 
                  Margin="5" Text="{Binding ServerName, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsNotConnected}"/>
         <!--<TextBlock Grid.Row="2" Grid.Column="0" Text="Имя базы данных" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5" FontWeight="Bold"/>
         <TextBox Grid.Row="3" Grid.Column="0" Width="400" MaxWidth="600" VerticalAlignment="Center" HorizontalAlignment="Left"
                  Margin="5" Text="{Binding DataBaseName, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsNotConnected}"/>-->
-        <Button Grid.Row="2" Grid.Column="0" Content="Заполнить БД значениями" Padding="5" HorizontalAlignment="Left"  IsEnabled="{Binding HasCorrectServerName}" Command="{Binding OnFillDBCommand}" Margin="5,0,0,0"/>
+        <Button Grid.Row="2" Grid.Column="0" Content="Fill database" Padding="5" HorizontalAlignment="Left"  IsEnabled="{Binding HasCorrectServerName}" Command="{Binding OnFillDBCommand}" Margin="5,0,0,0"/>
         <!--SelectedItem="{Binding SelectedUser}"-->
-        <DataGrid Grid.Column="1" Grid.Row="1" Grid.RowSpan="4" Margin="10, 0, 10 ,0" ItemsSource="{Binding Users}" Visibility="{Binding IsConnected}">
-            
+        <DataGrid Grid.Column="1" Grid.Row="1" Grid.RowSpan="4" Margin="10, 0, 10 ,0" ItemsSource="{Binding UserTableItems, Mode=TwoWay}" Visibility="{Binding IsConnected}" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Width="*" Header="№" Binding="{Binding Number, Mode=TwoWay}"/>
+                <DataGridTextColumn Width="3*" Header="Name" Binding="{Binding Name, Mode=TwoWay}"/>
+                <DataGridTextColumn Width="4*" Header="Phone number" Binding="{Binding PhoneNumber, Mode=TwoWay}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <DataGrid Grid.Column="2" Grid.Row="1" Grid.RowSpan="4" Margin="10, 0, 10 ,0" ItemsSource="{Binding OrderTableItems, Mode=TwoWay}" Visibility="{Binding IsConnected}" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Width="*" Header="№" Binding="{Binding Number, Mode=TwoWay}"/>
+                <DataGridTextColumn Width="*" Header="№ of User" Binding="{Binding UserNumber, Mode=TwoWay}"/>
+                <DataGridTextColumn Width="3*" Header="Summ" Binding="{Binding Summ, Mode=TwoWay}"/>
+                <DataGridTextColumn Width="4*" Header="Date" Binding="{Binding DateTime, Mode=TwoWay}"/>
+            </DataGrid.Columns>
         </DataGrid>
         <!--<Button Grid.Row="2"/>-->
         <!--<Button Content="Connect" VerticalAlignment="Center" HorizontalAlignment="Left" Padding="5" Command="{Binding OnClickCommand}" Grid.Column="1" Margin="499,0,0,0"></Button>-->

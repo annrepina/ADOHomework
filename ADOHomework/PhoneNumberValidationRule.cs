@@ -13,6 +13,19 @@ namespace ADOHomework
     {
         public const long MaxNumber = 89999999999;
 
+		public PhoneNumberValidationRule()
+		{
+            _errorMessage = "";
+
+        }
+
+        private string _errorMessage;
+        public string ErrorMessage
+        {
+            get { return _errorMessage; }
+            set { _errorMessage = value; }
+        }
+
         public override ValidationResult Validate(object value, CultureInfo cultureInfo)
         {
             long phoneNumber = 0L;
@@ -21,20 +34,22 @@ namespace ADOHomework
 
             Regex regex = new Regex(@"^8\d{10}");
 
-            Model.Wrappers.UserTableItem userTableItem = (Model.Wrappers.UserTableItem)value;
+			//string str = value.ToString();
 
-            try
-            {
-                // если строка не пустая
-                if (userTableItem.PhoneNumber.Length > 0)
-                    success = Int64.TryParse((string)value, out phoneNumber);
-            }
-            catch (Exception e)
-            {
-                return new ValidationResult(false, $"Illegal characters or {e.Message}");
-            }
+			//Model.Wrappers.UserTableItem userTableItem = (Model.Wrappers.UserTableItem)value;
 
-            if (regex.IsMatch(phoneNumber.ToString()))
+			try
+			{
+				// если строка не пустая
+				if (value != null && value.ToString().Length > 0)
+					success = Int64.TryParse((string)value, out phoneNumber);
+			}
+			catch (Exception e)
+			{
+				return new ValidationResult(false, $"Illegal characters or {e.Message}");
+			}
+
+			if (regex.IsMatch(phoneNumber.ToString()))
             {
                 //return new ValidationResult(true, regex.Match(phoneNumber.ToString()).ToString());
 

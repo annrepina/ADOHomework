@@ -32,5 +32,16 @@ namespace ADOHomework.Model.Wrappers
 				OnPropertyChanged(nameof(Number));
 			}
 		}
+
+		public override bool Equals(object? obj)
+		{
+			if(obj == null)
+				return false;
+
+			if(obj is UserTableItem item)
+				return Name == item.Name && Id == item.Id && PhoneNumber == item.PhoneNumber;
+
+			return false;
+		}
 	}
 }

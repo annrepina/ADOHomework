@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media.Animation;
 
 namespace ADOHomework
 {
@@ -23,11 +24,12 @@ namespace ADOHomework
         {
             OnFillDBCommand = new DelegateCommand(OnFillDBAsync);
             _serverName = "";
+            _connectionString = "";
             _isNotConnected = true;
             _hasCorrectServerName = false;
             UserTableItems = new ObservableCollection<UserTableItem>();
             OrderTableItems = new ObservableCollection<OrderTableItem>();
-            //UserTableItems.CollectionChanged +=
+            UserTableItems.CollectionChanged += OnUserTableItemsListPropertyChanged;
 
             _lastUserNumber = 0;
             _lastOrderNumber = 0;
@@ -35,6 +37,7 @@ namespace ADOHomework
         }
 
         private string _serverName;
+        private string _connectionString;
 		private bool _isNotConnected;
 		private bool _hasCorrectServerName;
         private bool _isConnected;
@@ -50,6 +53,8 @@ namespace ADOHomework
         private const int DefaultNumberOfOrders = 15;
 
         private const string DefaultDatabaseName = "ADOHomework";
+        private const string UsersTableName = "Users";
+        private const string OrdersTableName = "Orders";
 
         #endregion Константы
 
@@ -127,6 +132,8 @@ namespace ADOHomework
 			{
                 _serverName = value;
 
+                _connectionString = $"Server={_serverName};Database=master;Trusted_Connection=True;Encrypt=False;MultipleActiveResultSets=True;";
+
                 HasCorrectServerName = true;
             }
 		}
@@ -144,7 +151,7 @@ namespace ADOHomework
         {
             // Строка подключения
             //_connectionString = "Server=DESKTOP-BHIRPIK\\MYSUPERDB;Database=master;Trusted_Connection=True;Encrypt=False";
-            string _connectionString = $"Server={_serverName};Database=master;Trusted_Connection=True;Encrypt=False;MultipleActiveResultSets=True;";
+            //string _connectionString = $"Server={_serverName};Database=master;Trusted_Connection=True;Encrypt=False;MultipleActiveResultSets=True;";
 
             try
             {
@@ -169,7 +176,6 @@ namespace ADOHomework
                         ReadUserTableItemsFromDB(connection);
                         ReadOrderTableItemsFromDB(connection);
                     }
-
 
                     else
 					{
@@ -197,10 +203,89 @@ namespace ADOHomework
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
 
-        private void OnUserTableItemsPropertyChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        /// <summary>
+        /// Когда изменяется список пользователей
+        /// </summary>
+        /// <param name="sender">Объект вызваваший событие</param>
+        /// <param name="e">Содержит данные о событии</param>
+        private void OnUserTableItemsListPropertyChanged(object? sender, NotifyCollectionChangedEventArgs e)
 		{
+            if(e.OldItems != null)
+            {
+                foreach (INotifyPropertyChanged item in e.OldItems)
+                {
+                    item.PropertyChanged -= OnUserTableItemsPropertyChanged;
+                }
+            }
 
+            if(e.NewItems != null)
+            {
+                foreach (INotifyPropertyChanged item in e.NewItems)
+                {
+                    item.PropertyChanged += OnUserTableItemsPropertyChanged;
+                }
+            }          
 		}
+
+        private async void OnUserTableItemsPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            //string sqlExpression = $"USE {DefaultDatabaseName}\nSELECT * FROM Users";
+
+
+            ObservableCollection<UserTableItem> tempUserTableItems = new ObservableCollection<UserTableItem>();
+
+            // SqlConnection с помощью которого мы подключаеся к sql серверу 
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                // Открываем подключение
+                await connection.OpenAsync();
+
+                ReadUserTableItemsFromDB(connection, ref tempUserTableItems);
+
+                int numberofElements = tempUserTableItems.Count;
+
+                for(int i = 0; i < numberofElements; i++)
+                {
+                    // если они чем-то отличаются
+                    if (!tempUserTableItems[i].Equals(UserTableItems[i]))
+                    {
+                        string sqlExpression = $"USE {DefaultDatabaseName}\n" +
+                                               $"UPDATE {UsersTableName}\n" +
+                                               $"SET [Name] = '{UserTableItems[i].Name}', PhoneNumber = '{UserTableItems[i].PhoneNumber}'";
+
+                        SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
+
+                        sqlCommand.ExecuteNonQuery();
+
+                        break;
+                    }
+                }
+
+                //// из microsoft
+                //// Предоставляет способ чтения потока строк последовательного доступа из базы данных SQL Server
+                //using (SqlDataReader reader = sqlCommand.ExecuteReader())
+                //{
+                //    // Read - возвращеает true, если есть что читать, если нет - false
+                //    while (reader.Read())
+                //    {
+                //        var userTableItem = new UserTableItem
+                //        {
+                //            Number = ++_lastUserNumber,
+                //            Id = reader.GetInt32(0),
+                //            Name = reader.GetString(1),
+                //            PhoneNumber = reader.GetString(2)
+                //        };
+
+                //        UserTableItems.Add(userTableItem);
+                //    }
+                //}
+            }
+        }
+
+        private void OnOrderTableItemsPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+
+        }
 
         #region Функции по созданию БД, таблиц, хранимых процедур
 
@@ -232,17 +317,17 @@ namespace ADOHomework
         private void CreateTables(SqlConnection connection)
         {
             // Запрос
-            string sqlExpression = "USE ADOHomework\n" +
-                "CREATE TABLE Users\n" +
+            string sqlExpression = $"USE ADOHomework\n" +
+                $"CREATE TABLE {UsersTableName}\n" +
                 "(\n" +
                     "Id int PRIMARY KEY IDENTITY NOT NULL,\n" +
                     "[Name] varchar(100) NOT NULL,\n" +
-                    "PhoneNumber varchar(11) UNIQUE NOT NULL\n" +
+                    "PhoneNumber varchar(11) NOT NULL\n" +
                 ")\n" +
-                "CREATE TABLE Orders\n" +
+                $"CREATE TABLE {OrdersTableName}\n" +
                 "(\n" +
                     "Id int PRIMARY KEY IDENTITY NOT NULL,\n" +
-                    "CustomerId int REFERENCES Users (Id) NOT NULL,\n" +
+                    $"CustomerId int REFERENCES {UsersTableName} (Id) NOT NULL,\n" +
                     "Summ int NOT NULL,\n" +
                     "[Date] datetime NOT NULL\n" +
                 ")";
@@ -263,11 +348,11 @@ namespace ADOHomework
         private void CreateProcedureInsertUsers(SqlConnection connection)
         {
             string createProcedureStr =
-                            "CREATE PROCEDURE[dbo].[InsertIntoUsers]\n" +
+                            $"CREATE PROCEDURE[dbo].[InsertInto{UsersTableName}]\n" +
                                 "@name varchar(100),\n" +
                                 "@phoneNumber varchar(11)\n" +
                             "AS\n" +
-                                "INSERT INTO Users([Name], PhoneNumber)\n" +
+                                $"INSERT INTO {UsersTableName}([Name], PhoneNumber)\n" +
                                 "VALUES(@name, @phoneNumber)\n";
 
             SqlCommand command = new SqlCommand(createProcedureStr, connection);
@@ -282,12 +367,12 @@ namespace ADOHomework
         private void CreateProcedureInsertOrders(SqlConnection connection)
         {
             string createProcedureStr =
-                "CREATE PROCEDURE[dbo].[InsertIntoOrders]\n" +
+                $"CREATE PROCEDURE[dbo].[InsertInto{OrdersTableName}]\n" +
                     "@customerId int,\n" +
                     "@sum int,\n" +
                     "@date datetime\n" +
                 "AS\n" +
-                    "INSERT INTO Orders (CustomerId, Summ, [Date])\n" +
+                    $"INSERT INTO {OrdersTableName} (CustomerId, Summ, [Date])\n" +
                     "VALUES (@customerId, @sum, @date)\n";
 
             SqlCommand command = new SqlCommand(createProcedureStr, connection);
@@ -325,7 +410,7 @@ namespace ADOHomework
             for (int i = 0; i < DefaultNumberOfUsers; ++i)
             {
                 // создаем команду
-                SqlCommand command = new SqlCommand("InsertIntoUsers", connection);
+                SqlCommand command = new SqlCommand($"InsertInto{UsersTableName}", connection);
                 command.CommandType = System.Data.CommandType.StoredProcedure;
 
                 // Создаем юзера
@@ -349,7 +434,7 @@ namespace ADOHomework
             for (int i = 0; i < DefaultNumberOfOrders; ++i)
             {
                 // создаем команду
-                SqlCommand command = new SqlCommand("InsertIntoOrders", connection);
+                SqlCommand command = new SqlCommand($"InsertInto{OrdersTableName}", connection);
                 command.CommandType = System.Data.CommandType.StoredProcedure;
 
                 // Создаем заказ
@@ -371,13 +456,15 @@ namespace ADOHomework
 
         #endregion Заполнение таблиц
 
+        #region Чтение из БД
+
         /// <summary>
-        /// Чтение юзеров из ДБ
+        /// Чтение юзеров из ДБ и добавление их в список UserTableItems
         /// </summary>
-        /// <param name="connection"></param>
+        /// <param name="connection">SQL соединение</param>
         private void ReadUserTableItemsFromDB(SqlConnection connection)
         {
-            string sqlExpression = $"USE {DefaultDatabaseName}\nSELECT * FROM Users";
+            string sqlExpression = $"USE {DefaultDatabaseName}\nSELECT * FROM {UsersTableName}";
 
             SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
 
@@ -401,9 +488,45 @@ namespace ADOHomework
             }
         }
 
+        /// <summary>
+        /// Чтение юзеров из ДБ и добавление их в передаваемый список userTableItems
+        /// </summary>
+        /// <param name="connection">SQL соединение</param>
+        /// <param name="userTableItems">Передаваемый список, в который предаются прочитанные зачения</param>
+        private void ReadUserTableItemsFromDB(SqlConnection connection, ref ObservableCollection<UserTableItem> userTableItems)
+        {
+            if (userTableItems == null)
+                userTableItems = new ObservableCollection<UserTableItem>();
+
+            int numberCounter = 0;
+
+            string sqlExpression = $"USE {DefaultDatabaseName}\nSELECT * FROM {UsersTableName}";
+
+            SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
+
+            // из microsoft
+            // Предоставляет способ чтения потока строк последовательного доступа из базы данных SQL Server
+            using (SqlDataReader reader = sqlCommand.ExecuteReader())
+            {
+                // Read - возвращеает true, если есть что читать, если нет - false
+                while (reader.Read())
+                {
+                    var userTableItem = new UserTableItem
+                    {
+                        Number = ++numberCounter,
+                        Id = reader.GetInt32(0),
+                        Name = reader.GetString(1),
+                        PhoneNumber = reader.GetString(2)
+                    };
+
+                    userTableItems.Add(userTableItem);
+                }
+            }
+        }
+
         private void ReadOrderTableItemsFromDB(SqlConnection connection)
 		{
-            string sqlExpression = $"USE {DefaultDatabaseName}\nSELECT * FROM Orders";
+            string sqlExpression = $"USE {DefaultDatabaseName}\nSELECT * FROM {OrdersTableName}";
 
             SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
 
@@ -429,7 +552,7 @@ namespace ADOHomework
             }
         }
 
-
+        #endregion Чтение из БД
 
 
         

@@ -10,6 +10,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="250"/>
             <ColumnDefinition Width="500"/>
+            <ColumnDefinition Width="500"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
@@ -30,16 +31,21 @@
         <!--SelectedItem="{Binding SelectedUser}"-->
         <DataGrid Grid.Column="1" Grid.Row="1" Grid.RowSpan="4" Margin="10, 0, 10 ,0" ItemsSource="{Binding UserTableItems, Mode=TwoWay}" Visibility="{Binding IsConnected}" AutoGenerateColumns="False">
             <DataGrid.Columns>
-                <DataGridTextColumn Width="*" Header="№" Binding="{Binding Number, Mode=TwoWay}"/>
+                <DataGridTextColumn Width="*" Header="№" Binding="{Binding Number, Mode=TwoWay}" IsReadOnly="True"/>
                 <DataGridTextColumn Width="3*" Header="Name" Binding="{Binding Name, Mode=TwoWay}"/>
-                <DataGridTextColumn Width="4*" Header="Phone number" Binding="{Binding PhoneNumber, Mode=TwoWay}"/>
+                <DataGridTextColumn Width="4*" Header="Phone number" Binding="{Binding PhoneNumber, Mode=TwoWay, ValidatesOnExceptions=True}"/>
             </DataGrid.Columns>
+            <DataGrid.RowValidationRules>
+                <!--<local:PhoneNumberValidationRule ValidationStep="UpdatedValue"/>-->
+                <local:PhoneNumberValidationRule ValidationStep="UpdatedValue"/>
+                
+            </DataGrid.RowValidationRules>
         </DataGrid>
 
         <DataGrid Grid.Column="2" Grid.Row="1" Grid.RowSpan="4" Margin="10, 0, 10 ,0" ItemsSource="{Binding OrderTableItems, Mode=TwoWay}" Visibility="{Binding IsConnected}" AutoGenerateColumns="False">
             <DataGrid.Columns>
-                <DataGridTextColumn Width="*" Header="№" Binding="{Binding Number, Mode=TwoWay}"/>
-                <DataGridTextColumn Width="*" Header="№ of User" Binding="{Binding UserNumber, Mode=TwoWay}"/>
+                <DataGridTextColumn Width="*" Header="№" Binding="{Binding Number, Mode=TwoWay}" IsReadOnly="True"/>
+                <DataGridTextColumn Width="1.5*" Header="№ of User" Binding="{Binding UserNumber, Mode=TwoWay}"/>
                 <DataGridTextColumn Width="3*" Header="Summ" Binding="{Binding Summ, Mode=TwoWay}"/>
                 <DataGridTextColumn Width="4*" Header="Date" Binding="{Binding DateTime, Mode=TwoWay}"/>
             </DataGrid.Columns>

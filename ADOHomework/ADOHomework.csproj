@@ -8,12 +8,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Model\Новая папка\**" />
+    <EmbeddedResource Remove="Model\Новая папка\**" />
+    <None Remove="Model\Новая папка\**" />
+    <Page Remove="Model\Новая папка\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.0.0" />
     <PackageReference Include="Prism.Core" Version="8.1.97" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Model\Новая папка\" />
+    <Folder Include="ValidationRules\" />
   </ItemGroup>
 
 </Project>

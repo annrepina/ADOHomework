@@ -39,25 +39,21 @@
                  Margin="5" Text="{Binding DataBaseName, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsNotConnected}"/>-->
         <Button Grid.Row="2" Grid.Column="0" Content="Fill database" Padding="5" HorizontalAlignment="Left"  IsEnabled="{Binding HasCorrectServerName}" Command="{Binding OnFillDBCommand}" Margin="5,0,0,0"/>
         <!--SelectedItem="{Binding SelectedUser}"-->
-        <DataGrid Grid.Column="1" Grid.Row="1" Grid.RowSpan="4" Grid.ColumnSpan="2" Margin="10, 0, 10 ,0" ItemsSource="{Binding UserTableItems, Mode=TwoWay}" Visibility="{Binding IsConnected}" AutoGenerateColumns="False">
+        <DataGrid Grid.Column="1" Grid.Row="1" Grid.RowSpan="4" Margin="10, 0, 10 ,0" ItemsSource="{Binding UserTableItems, Mode=TwoWay}" Visibility="{Binding IsConnected}" AutoGenerateColumns="False">
             <DataGrid.Columns>
                 <DataGridTextColumn Width="*" Header="№" Binding="{Binding Number, Mode=TwoWay}" IsReadOnly="True"/>
-                <DataGridTextColumn Width="3*" Header="Name" Binding="{Binding Name, Mode=TwoWay}"/>
-                <DataGridTextColumn Width="4*" Header="Phone number" Validation.ErrorTemplate="{StaticResource errorTemplate}">
-
-                    <!--<Validation.ErrorTemplate>
-                        <ControlTemplate>
-                            <StackPanel>
-                                -->
-                    <!-- Placeholder for the TextBox itself -->
-                    <!--
-                                <AdornedElementPlaceholder x:Name="textBox"/>
-                                <TextBlock Text="{Binding [0].ErrorContent}" Foreground="Red"/>
-                            </StackPanel>
-                        </ControlTemplate>
-                    </Validation.ErrorTemplate>-->
+                <DataGridTextColumn Width="3*" Header="Name">
                     <DataGridTextColumn.Binding>
-                        <Binding Path="PhoneNumber" UpdateSourceTrigger="LostFocus" ValidatesOnDataErrors="True">
+                        <Binding Path="Name" Mode="TwoWay" UpdateSourceTrigger="LostFocus" ValidatesOnDataErrors="True">
+                            <Binding.ValidationRules>
+                                <local:NameValidationRule/>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Width="4*" Header="Phone number" Validation.ErrorTemplate="{StaticResource errorTemplate}">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="PhoneNumber" UpdateSourceTrigger="LostFocus" ValidatesOnDataErrors="True" Mode="TwoWay">
                             <Binding.ValidationRules>
                                 <local:PhoneNumberValidationRule/>
                             </Binding.ValidationRules>
@@ -67,23 +63,38 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <!--<TextBlock Grid.Row="5" Text="{Binding NotifyOnValidationError=True}">
-          
-        </TextBlock>-->
-        <!--<DockPanel>
-            <TextBlock Foreground="Red" FontSize="20" DockPanel.Dock="Left">!</TextBlock>
-            <TextBlock Text="{Binding [0].ErrorContent}" Foreground="Red" DockPanel.Dock="Bottom"/>
-        </DockPanel>-->
-        
-        
-        <!--<DataGrid Grid.Column="2" Grid.Row="1" Grid.RowSpan="4" Margin="10, 0, 10 ,0" ItemsSource="{Binding OrderTableItems, Mode=TwoWay}" Visibility="{Binding IsConnected}" AutoGenerateColumns="False">
+        <DataGrid Grid.Column="2" Grid.Row="1" Grid.RowSpan="4" Margin="10, 0, 10 ,0" ItemsSource="{Binding OrderTableItems, Mode=TwoWay}" Visibility="{Binding IsConnected}" AutoGenerateColumns="False">
             <DataGrid.Columns>
                 <DataGridTextColumn Width="*" Header="№" Binding="{Binding Number, Mode=TwoWay}" IsReadOnly="True"/>
-                <DataGridTextColumn Width="1.5*" Header="№ of User" Binding="{Binding UserNumber, Mode=TwoWay}"/>
-                <DataGridTextColumn Width="3*" Header="Summ" Binding="{Binding Summ, Mode=TwoWay}"/>
-                <DataGridTextColumn Width="4*" Header="Date" Binding="{Binding DateTime, Mode=TwoWay}"/>
+                <DataGridTextColumn Width="1.5*" Header="№ of User">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="UserNumber" Mode="TwoWay" UpdateSourceTrigger="LostFocus" ValidatesOnDataErrors="True">
+                            <Binding.ValidationRules>
+                                <local:NumberOfUserValidationRule/>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Width="3*" Header="Summ">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="Summ" Mode="TwoWay" UpdateSourceTrigger="LostFocus" ValidatesOnDataErrors="True">
+                            <Binding.ValidationRules>
+                                <local:SummValidationRule/>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Width="4*" Header="Date">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="DateTime" Mode="TwoWay" UpdateSourceTrigger="LostFocus" ValidatesOnDataErrors="True">
+                            <Binding.ValidationRules>
+                                <local:DateTimeValidationRule/>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
             </DataGrid.Columns>
-        </DataGrid>-->
+        </DataGrid>
         
         <!--<Button Grid.Row="2"/>-->
         <!--<Button Content="Connect" VerticalAlignment="Center" HorizontalAlignment="Left" Padding="5" Command="{Binding OnClickCommand}" Grid.Column="1" Margin="499,0,0,0"></Button>-->

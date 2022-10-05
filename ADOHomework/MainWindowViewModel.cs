@@ -31,6 +31,7 @@ namespace ADOHomework
             UserTableItems = new ObservableCollection<UserTableItem>();
             OrderTableItems = new ObservableCollection<OrderTableItem>();
             UserTableItems.CollectionChanged += OnUserTableItemsListPropertyChanged;
+            OrderTableItems.CollectionChanged += OnOrderTableItemsListPropertyChanged;
 
             _lastUserNumber = 0;
             _lastOrderNumber = 0;
@@ -42,11 +43,16 @@ namespace ADOHomework
 		private bool _isNotConnected;
 		private bool _hasCorrectServerName;
         private bool _isConnected;
+        /// <summary>
+        /// Последний номер пользователя в таблице
+        /// </summary>
+        private int _lastUserNumber;
 
-        //private const string _dataBaseName = "ADOHomework";
-        //private bool _hasDataBaseName;
-        //private bool _canTryToConnect;
-        //private UserBuilder _userBuilder;
+        /// <summary>
+        /// Последний номер заказа в таблице
+        /// </summary>
+        private int _lastOrderNumber;
+
 
         #region Константы
 
@@ -59,21 +65,13 @@ namespace ADOHomework
 
         #endregion Константы
 
+        #region Свойства
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public ObservableCollection<UserTableItem> UserTableItems{ get; set; }
 
         public ObservableCollection<OrderTableItem> OrderTableItems{ get; set; }
-
-        /// <summary>
-        /// Последний номер пользователя в таблице
-        /// </summary>
-        private int _lastUserNumber;
-
-        /// <summary>
-        /// Последний номер заказа в таблице
-        /// </summary>
-        private int _lastOrderNumber;
 
         /// <summary>
         /// Есть подкючение?
@@ -139,14 +137,9 @@ namespace ADOHomework
             }
 		}
 
-
-
+        #endregion Свойства
 
         public DelegateCommand OnFillDBCommand { get; }
-
-
-
-        //public DelegateCommand OnClickCommand { get; }
 
         private async void OnFillDBAsync()
         {
@@ -199,6 +192,8 @@ namespace ADOHomework
             }
         }
 
+        #region Методы-обработчики событий измениния свойств
+
         private void OnPropertyChanged(string propName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
@@ -230,9 +225,6 @@ namespace ADOHomework
 
         private async void OnUserTableItemsPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            //string sqlExpression = $"USE {DefaultDatabaseName}\nSELECT * FROM Users";
-
-
             ObservableCollection<UserTableItem> tempUserTableItems = new ObservableCollection<UserTableItem>();
 
             // SqlConnection с помощью которого мы подключаеся к sql серверу 
@@ -245,48 +237,93 @@ namespace ADOHomework
 
                 int numberofElements = tempUserTableItems.Count;
 
-                for(int i = 0; i < numberofElements; i++)
+                try
                 {
-                    // если они чем-то отличаются
-                    if (!tempUserTableItems[i].Equals(UserTableItems[i]))
+                    for(int i = 0; i < numberofElements; i++)
                     {
-                        string sqlExpression = $"USE {DefaultDatabaseName}\n" +
-                                               $"UPDATE {UsersTableName}\n" +
-                                               $"SET [Name] = '{UserTableItems[i].Name}', PhoneNumber = '{UserTableItems[i].PhoneNumber}'";
+                        // если они чем-то отличаются
+                        if (!tempUserTableItems[i].Equals(UserTableItems[i]))
+                        {
+                            string sqlExpression = $"USE {DefaultDatabaseName}\n" +
+                                                   $"UPDATE {UsersTableName}\n" +
+                                                   $"SET [Name] = '{UserTableItems[i].Name}', PhoneNumber = '{UserTableItems[i].PhoneNumber}'";
 
-                        SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
+                            SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
 
-                        sqlCommand.ExecuteNonQuery();
+                            sqlCommand.ExecuteNonQuery();
 
-                        break;
+                            break;
+                        }
                     }
                 }
-
-                //// из microsoft
-                //// Предоставляет способ чтения потока строк последовательного доступа из базы данных SQL Server
-                //using (SqlDataReader reader = sqlCommand.ExecuteReader())
-                //{
-                //    // Read - возвращеает true, если есть что читать, если нет - false
-                //    while (reader.Read())
-                //    {
-                //        var userTableItem = new UserTableItem
-                //        {
-                //            Number = ++_lastUserNumber,
-                //            Id = reader.GetInt32(0),
-                //            Name = reader.GetString(1),
-                //            PhoneNumber = reader.GetString(2)
-                //        };
-
-                //        UserTableItems.Add(userTableItem);
-                //    }
-                //}
+                catch (Exception)
+                {
+                    throw;
+                }
             }
         }
 
-        private void OnOrderTableItemsPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        private void OnOrderTableItemsListPropertyChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
+            if (e.OldItems != null)
+            {
+                foreach (INotifyPropertyChanged item in e.OldItems)
+                {
+                    item.PropertyChanged -= OnOrderTableItemsPropertyChanged;
+                }
+            }
 
+            if (e.NewItems != null)
+            {
+                foreach (INotifyPropertyChanged item in e.NewItems)
+                {
+                    item.PropertyChanged += OnOrderTableItemsPropertyChanged;
+                }
+            }
         }
+
+        private async void OnOrderTableItemsPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            ObservableCollection<OrderTableItem> tempOrderTableItems = new ObservableCollection<OrderTableItem>();
+
+            // SqlConnection с помощью которого мы подключаеся к sql серверу 
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                // Открываем подключение
+                await connection.OpenAsync();
+
+                ReadOrderTableItemsFromDB(connection, ref tempOrderTableItems);
+
+                int numberofElements = tempOrderTableItems.Count;
+
+                try
+                {
+                    for (int i = 0; i < numberofElements; i++)
+                    {
+                        // если они чем-то отличаются
+                        if (!tempOrderTableItems[i].Equals(OrderTableItems[i]))
+                        {
+                    
+                            string sqlExpression = $"USE {DefaultDatabaseName}\n" +
+                                                   $"UPDATE {OrdersTableName}\n" +
+                                                   $"SET CustomerId = {OrderTableItems[i].UserId}, Summ = {OrderTableItems[i].Summ}, Date = '{OrderTableItems[i].DateTime}'";
+
+                            SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
+
+                            sqlCommand.ExecuteNonQuery();
+
+                            break;
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+            }
+        }
+
+        #endregion Методы-обработчики событий измениния свойств
 
         #region Функции по созданию БД, таблиц, хранимых процедур
 
@@ -527,6 +564,8 @@ namespace ADOHomework
 
         private void ReadOrderTableItemsFromDB(SqlConnection connection)
 		{
+            OrderTableItem.MaxCustomerNumber = UserTableItems.Count;
+
             string sqlExpression = $"USE {DefaultDatabaseName}\nSELECT * FROM {OrdersTableName}";
 
             SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
@@ -540,7 +579,7 @@ namespace ADOHomework
                 {
                     var orderTableItem = new OrderTableItem
                     {
-                        Number = ++_lastOrderNumber,
+                        Number = ++_lastOrderNumber,                       
                         Id = reader.GetInt32(0),
                         UserNumber = GetNumberOfUserById(reader.GetInt32(1)),
                         UserId = reader.GetInt32(1),
@@ -553,10 +592,41 @@ namespace ADOHomework
             }
         }
 
+        private void ReadOrderTableItemsFromDB(SqlConnection connection, ref ObservableCollection<OrderTableItem> orderTableItems)
+        {
+            if (orderTableItems == null)
+                orderTableItems = new ObservableCollection<OrderTableItem>();
+
+            int numberCounter = 0;
+
+            string sqlExpression = $"USE {DefaultDatabaseName}\nSELECT * FROM {OrdersTableName}";
+
+            SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
+
+            // из microsoft
+            // Предоставляет способ чтения потока строк последовательного доступа из базы данных SQL Server
+            using (SqlDataReader reader = sqlCommand.ExecuteReader())
+            {
+                // Read - возвращеает true, если есть что читать, если нет - false
+                while (reader.Read())
+                {
+                    var orderTableItem = new OrderTableItem
+                    {
+                        Number = ++numberCounter,
+                        Id = reader.GetInt32(0),
+                        UserNumber = GetNumberOfUserById(reader.GetInt32(1)),
+                        UserId = reader.GetInt32(1),
+                        Summ = reader.GetInt32(2),
+                        DateTime = reader.GetDateTime(3),
+                    };
+
+                    orderTableItems.Add(orderTableItem);
+                }
+            }
+        }
+
         #endregion Чтение из БД
 
-
-        
         /// <summary>
         /// Передает список id юзеров 
         /// </summary>
@@ -616,8 +686,5 @@ namespace ADOHomework
 
             return 0;
 		}
-
-
-
     }
 }

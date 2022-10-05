@@ -27,7 +27,7 @@ namespace ADOHomework
             int nameindex = _random.Next(userNames.Length - 1);
             int lastnameindex = _random.Next(userNames.Length - 1);
 
-            string name = userNames[nameindex] + userLastNames[lastnameindex];
+            string name = userNames[nameindex] + ' ' + userLastNames[lastnameindex];
 
             _element.Name = name;
         }

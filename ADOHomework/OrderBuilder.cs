@@ -82,6 +82,10 @@ namespace ADOHomework
             DateTime res = start.AddDays(_random.Next(range)); 
 
             _element.DateTime = res;
+
+            //DateTime date 
         }
+
+        
     }
 }

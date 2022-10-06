@@ -1,6 +1,7 @@
 ﻿using ADOHomework.Model.basics;
 using ADOHomework.Model.Wrappers;
 using Microsoft.Data.SqlClient;
+using Microsoft.IdentityModel.Tokens;
 using Prism.Commands;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
+using System.Windows.Shell;
 
 namespace ADOHomework
 {
@@ -23,11 +25,15 @@ namespace ADOHomework
     {
         public MainWindowViewModel()
         {
-            OnFillDBCommand = new DelegateCommand(OnFillDBAsync);
+            OnConnectToServerCommand = new DelegateCommand(OnConnectToServerAsync);
+            OnFillDatabaseCommand = new DelegateCommand(OnFillDatabaseAsync);
+            OnAddNewUserCommand = new DelegateCommand(OnAddNewUserAsync);
             _serverName = "";
             _connectionString = "";
             _isNotConnected = true;
             _hasCorrectServerName = false;
+            _databaseIsNotFilled = true;
+            _databaseIsFilled = false;
             UserTableItems = new ObservableCollection<UserTableItem>();
             OrderTableItems = new ObservableCollection<OrderTableItem>();
             UserTableItems.CollectionChanged += OnUserTableItemsListPropertyChanged;
@@ -35,7 +41,13 @@ namespace ADOHomework
 
             _lastUserNumber = 0;
             _lastOrderNumber = 0;
-            //_userBuilder = new UserBuilder();
+            _minOrderSum = 0;
+            _maxOrderSum = 0;
+            _totalOrderSum = 0;
+
+            NewUserTableItem = new UserTableItem();
+            NewOrderTableitem = new OrderTableItem();
+
         }
 
         private string _serverName;
@@ -52,6 +64,13 @@ namespace ADOHomework
         /// Последний номер заказа в таблице
         /// </summary>
         private int _lastOrderNumber;
+        private bool _databaseIsNotFilled;
+        private bool _databaseIsFilled;
+        private bool _canConnect;
+        private int _minOrderSum;
+        private int _maxOrderSum;
+        private ulong _totalOrderSum;
+
 
 
         #region Константы
@@ -72,6 +91,45 @@ namespace ADOHomework
         public ObservableCollection<UserTableItem> UserTableItems{ get; set; }
 
         public ObservableCollection<OrderTableItem> OrderTableItems{ get; set; }
+
+        public UserTableItem NewUserTableItem { get; set; }
+        public OrderTableItem NewOrderTableitem { get; set; }
+
+        public int MinOrderSum
+        {
+            get => _minOrderSum;
+
+            set
+            {
+                _minOrderSum = value;
+
+                OnPropertyChanged(nameof(MinOrderSum));
+            }
+        }
+
+        public int MaxOrderSum
+        {
+            get => _maxOrderSum;
+
+            set
+            {
+                _maxOrderSum = value;
+
+                OnPropertyChanged(nameof(MaxOrderSum));
+            }
+        }
+
+        public ulong TotalOrderSum
+        {
+            get => _totalOrderSum;
+
+            set
+            {
+                _totalOrderSum = value;
+
+                OnPropertyChanged(nameof(TotalOrderSum));
+            }
+        }
 
         /// <summary>
         /// Есть подкючение?
@@ -99,6 +157,8 @@ namespace ADOHomework
             {
                 _isNotConnected = value;
 
+                CanConnect = _isNotConnected && _hasCorrectServerName;
+
                 OnPropertyChanged(nameof(IsNotConnected));
             }
         }
@@ -114,10 +174,27 @@ namespace ADOHomework
 			{
                 _hasCorrectServerName = value;
 
+                CanConnect = _isNotConnected && _hasCorrectServerName;
+
                 //CanTryToConnect = _hasCorrectConnectionString && _hasDataBaseName;
 
                 OnPropertyChanged(nameof(HasCorrectServerName));
             }      
+        }
+
+        /// <summary>
+        /// Можем подключиться?
+        /// </summary>
+        public bool CanConnect
+        {
+            get => _canConnect;
+
+            set
+            {
+                _canConnect = value;
+
+                OnPropertyChanged(nameof(CanConnect)); 
+            }
         }
 
         /// <summary>
@@ -137,16 +214,48 @@ namespace ADOHomework
             }
 		}
 
+        public bool DatabaseIsNotFilled
+        {
+            get => _databaseIsNotFilled;
+            
+            set
+            {
+                _databaseIsNotFilled = value;
+
+                OnPropertyChanged(nameof(DatabaseIsNotFilled));
+            }
+        }
+
+        public bool DatabaseIsFilled
+        {
+            get => _databaseIsFilled;
+
+            set
+            {
+                _databaseIsFilled = value;
+
+                OnPropertyChanged(nameof(DatabaseIsFilled));
+            }
+        }
+
         #endregion Свойства
 
-        public DelegateCommand OnFillDBCommand { get; }
 
-        private async void OnFillDBAsync()
+        #region DelegateCommands
+
+        public DelegateCommand OnFillDatabaseCommand { get; }
+
+        public DelegateCommand OnConnectToServerCommand { get; }
+
+        public DelegateCommand OnAddNewUserCommand { get; }
+
+        #endregion DelegateCommands
+
+
+        #region Обработчики DelegateCommands
+
+        private async void OnConnectToServerAsync()
         {
-            // Строка подключения
-            //_connectionString = "Server=DESKTOP-BHIRPIK\\MYSUPERDB;Database=master;Trusted_Connection=True;Encrypt=False";
-            //string _connectionString = $"Server={_serverName};Database=master;Trusted_Connection=True;Encrypt=False;MultipleActiveResultSets=True;";
-
             try
             {
                 // SqlConnection с помощью которого мы подключаеся к sql серверу 
@@ -164,23 +273,16 @@ namespace ADOHomework
                     string messageText = "";
 
                     if (HasDatabase(connection))
-					{
-                        messageText = $"Database called {DefaultDatabaseName} has already created";
-
-                        ReadUserTableItemsFromDB(connection);
-                        ReadOrderTableItemsFromDB(connection);
-                    }
+                        return;
 
                     else
 					{
-                        CreateDatabaseAndFill(connection);
-                        messageText = $"Database called {connection.Database} has created and filled";
+                        CreateDatabaseAndTables(connection);
+                        CreateStoredProcedures(connection);
+                        messageText = $"Database called {connection.Database} has created";
                     }
 
                     MessageBox.Show(messageText);
-
-                    var a = UserTableItems.Count;
-                    var n = OrderTableItems.Count;
                 }
             }
             catch (Exception ex)
@@ -191,6 +293,48 @@ namespace ADOHomework
                 MessageBox.Show(ex.Message);
             }
         }
+
+        private async void OnFillDatabaseAsync()
+        {
+            try
+            {
+                // SqlConnection с помощью которого мы подключаеся к sql серверу 
+                using (SqlConnection connection = new SqlConnection(_connectionString))
+                {
+                    // Открываем подключение
+                    await connection.OpenAsync();
+
+                    string messageText = "";
+
+                    messageText = $"Database {DefaultDatabaseName} has filled";
+
+                    FillAndReadTables(connection);
+
+                    UpdateParametersLabel();
+
+                    MessageBox.Show(messageText);
+
+                    DatabaseIsNotFilled = false;
+                    DatabaseIsFilled = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                // сбрасываем значение т.к. нет подключения
+                IsNotConnected = true;
+
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private async void OnAddNewUserAsync()
+        {
+            if(NewUserTableItem)
+            NewUserTableItem = new UserTableItem()
+        }
+
+        #endregion Обработчики DelegateCommands
+
 
         #region Методы-обработчики событий измениния свойств
 
@@ -333,6 +477,8 @@ namespace ADOHomework
             }
         }
 
+
+
         #endregion Методы-обработчики событий измениния свойств
 
         #region Функции по созданию БД, таблиц, хранимых процедур
@@ -428,14 +574,20 @@ namespace ADOHomework
             command.ExecuteNonQuery();
         }
 
-        private void CreateDatabaseAndFill(SqlConnection connection)
+        private void CreateDatabaseAndTables(SqlConnection connection)
 		{
             CreateDatabase(connection);
             CreateTables(connection);
+        }
 
+        private void CreateStoredProcedures(SqlConnection connection)
+        {
             CreateProcedureInsertUsers(connection);
             CreateProcedureInsertOrders(connection);
+        }
 
+        private void FillAndReadTables(SqlConnection connection)
+        {
             FillUsersTable(connection);
             ReadUserTableItemsFromDB(connection);
 
@@ -444,6 +596,7 @@ namespace ADOHomework
         }
 
         #endregion Функции по созданию БД, таблиц, хранимых процедур
+
 
         #region Заполнение таблиц
 
@@ -454,6 +607,9 @@ namespace ADOHomework
         private void FillUsersTable(SqlConnection connection)
         {
             UserBuilder userBuilder = new UserBuilder();
+
+            SqlCommand useCommand = new SqlCommand($"USE {DefaultDatabaseName}\n", connection);
+            useCommand.ExecuteNonQuery();
 
             for (int i = 0; i < DefaultNumberOfUsers; ++i)
             {
@@ -479,6 +635,9 @@ namespace ADOHomework
             OrderBuilder orderBuilder = new OrderBuilder();
             orderBuilder.UsersId = getUsersId();
 
+            SqlCommand useCommand = new SqlCommand($"USE {DefaultDatabaseName}\n", connection);
+            useCommand.ExecuteNonQuery();
+
             for (int i = 0; i < DefaultNumberOfOrders; ++i)
             {
                 // создаем команду
@@ -503,6 +662,7 @@ namespace ADOHomework
         }
 
         #endregion Заполнение таблиц
+
 
         #region Чтение из БД
 
@@ -686,7 +846,7 @@ namespace ADOHomework
         /// </summary>
         /// <param name="id">id пользователя</param>
         /// <returns></returns>
-        int GetNumberOfUserById(int id)
+        private int GetNumberOfUserById(int id)
 		{
             foreach(var user in UserTableItems)
 			{
@@ -706,6 +866,24 @@ namespace ADOHomework
             }
 
             return 0;
+        }
+
+        private void UpdateParametersLabel()
+        {
+            if(!OrderTableItems.IsNullOrEmpty())
+            {
+                var tempList = OrderTableItems.ToList().Select(order => order.Summ).ToList();
+
+                MinOrderSum = tempList.Min();
+                MaxOrderSum = tempList.Max();
+                TotalOrderSum = (ulong)tempList.Sum();
+            }
+            else
+            {
+                MinOrderSum = 0;
+                MaxOrderSum = 0;
+                TotalOrderSum = 0;
+            }
         }
     }
 }

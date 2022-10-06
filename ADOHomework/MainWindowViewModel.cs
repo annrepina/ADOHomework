@@ -28,12 +28,17 @@ namespace ADOHomework
             OnConnectToServerCommand = new DelegateCommand(OnConnectToServerAsync);
             OnFillDatabaseCommand = new DelegateCommand(OnFillDatabaseAsync);
             OnAddNewUserCommand = new DelegateCommand(OnAddNewUserAsync);
+            OnAddNewOrderCommand = new DelegateCommand(OnAddNewOrderAsync);
+            OnUserDataGridDeleteKeyDownCommand = new DelegateCommand(OnUserDataGridDeleteKeyDownAsync);
+            OnOrderDataGridDeleteKeyDownCommand = new DelegateCommand(OnOrderDataGridDeleteKeyDownAsync);
             _serverName = "";
             _connectionString = "";
             _isNotConnected = true;
             _hasCorrectServerName = false;
             _databaseIsNotFilled = true;
             _databaseIsFilled = false;
+            _canConnect = false;
+            _canAddNewUser = false;
             UserTableItems = new ObservableCollection<UserTableItem>();
             OrderTableItems = new ObservableCollection<OrderTableItem>();
             UserTableItems.CollectionChanged += OnUserTableItemsListPropertyChanged;
@@ -46,7 +51,9 @@ namespace ADOHomework
             _totalOrderSum = 0;
 
             NewUserTableItem = new UserTableItem();
-            NewOrderTableitem = new OrderTableItem();
+            NewOrderTableItem = new OrderTableItem();
+            SelectedUserTableItem = new UserTableItem();
+            SelectedOrderTableItem = new OrderTableItem();
 
         }
 
@@ -70,12 +77,17 @@ namespace ADOHomework
         private int _minOrderSum;
         private int _maxOrderSum;
         private ulong _totalOrderSum;
+		private bool _canAddNewUser;
+		private UserTableItem _newUserTableItem;
+		private OrderTableItem _newOrderTableItem;
+		private UserTableItem _selectedUserTableItem;
+		private OrderTableItem _selectedOrderTableItem;
 
 
 
-        #region Константы
+		#region Константы
 
-        private const int DefaultNumberOfUsers = 10;
+		private const int DefaultNumberOfUsers = 10;
         private const int DefaultNumberOfOrders = 15;
 
         private const string DefaultDatabaseName = "ADOHomework";
@@ -92,8 +104,53 @@ namespace ADOHomework
 
         public ObservableCollection<OrderTableItem> OrderTableItems{ get; set; }
 
-        public UserTableItem NewUserTableItem { get; set; }
-        public OrderTableItem NewOrderTableitem { get; set; }
+        public UserTableItem NewUserTableItem 
+        {
+            get => _newUserTableItem;
+
+			set
+			{
+                _newUserTableItem = value;
+
+                OnPropertyChanged(nameof(NewUserTableItem));
+			}
+        }
+
+        public OrderTableItem NewOrderTableItem 
+        {
+            get => _newOrderTableItem;
+
+            set
+			{
+                _newOrderTableItem = value;
+
+                OnPropertyChanged(nameof(NewOrderTableItem));
+            }
+        }
+
+        public UserTableItem SelectedUserTableItem
+		{
+            get => _selectedUserTableItem;
+
+			set
+			{
+                _selectedUserTableItem = value;
+
+                OnPropertyChanged(nameof(SelectedUserTableItem));
+			}
+        }
+
+        public OrderTableItem SelectedOrderTableItem
+        {
+            get => _selectedOrderTableItem;
+
+            set
+            {
+                _selectedOrderTableItem = value;
+
+                OnPropertyChanged(nameof(SelectedOrderTableItem));
+            }
+        }
 
         public int MinOrderSum
         {
@@ -197,6 +254,18 @@ namespace ADOHomework
             }
         }
 
+        public bool CanAddNewUser
+		{
+            get => _canAddNewUser;
+
+			set
+			{
+                _canAddNewUser = value;
+
+                OnPropertyChanged(nameof(CanAddNewUser));
+			}
+        }
+
         /// <summary>
         /// Стока подключения
         /// </summary>
@@ -249,6 +318,12 @@ namespace ADOHomework
 
         public DelegateCommand OnAddNewUserCommand { get; }
 
+        public DelegateCommand OnAddNewOrderCommand { get; }
+
+        public DelegateCommand OnUserDataGridDeleteKeyDownCommand { get; }
+
+        public DelegateCommand OnOrderDataGridDeleteKeyDownCommand { get; }
+
         #endregion DelegateCommands
 
 
@@ -290,7 +365,7 @@ namespace ADOHomework
                 // сбрасываем значение т.к. нет подключения
                 IsNotConnected = true;
 
-                MessageBox.Show(ex.Message);
+                MessageBox.Show("Server name is not correct. Please, try another one");
             }
         }
 
@@ -329,9 +404,277 @@ namespace ADOHomework
 
         private async void OnAddNewUserAsync()
         {
-            if(NewUserTableItem)
-            NewUserTableItem = new UserTableItem()
+            if (NewUserTableItem != null)
+            {
+                if(NewUserTableItem.IsEmpty())
+				{
+                    MessageBox.Show("Fill all fields, please");
+
+                    return;
+				}
+
+                try
+                {
+                    // SqlConnection с помощью которого мы подключаеся к sql серверу 
+                    using (SqlConnection connection = new SqlConnection(_connectionString))
+                    {
+                        // Открываем подключение
+                        await connection.OpenAsync();
+
+                        //string messageText = "";
+
+                        SqlCommand useCommand = new SqlCommand($"USE {DefaultDatabaseName}\n", connection);
+                        useCommand.ExecuteNonQuery();
+
+                        // создаем команду
+                        SqlCommand command = new SqlCommand($"InsertInto{UsersTableName}", connection);
+                        command.CommandType = System.Data.CommandType.StoredProcedure;
+
+                        SqlParameter nameParam = new SqlParameter("@name", NewUserTableItem.Name);
+                        command.Parameters.Add(nameParam);
+
+                        SqlParameter phoneNumberParam = new SqlParameter("@phoneNumber", NewUserTableItem.PhoneNumber);
+                        command.Parameters.Add(phoneNumberParam);
+
+                        command.ExecuteNonQuery();
+
+                        AddNewUserToList(connection);
+
+                        string messageText = $"New user was successfully added";
+                        MessageBox.Show(messageText);
+
+                        OrderTableItem.MaxCustomerNumber = UserTableItems.Count;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // сбрасываем значение т.к. нет подключения
+                    IsNotConnected = true;
+
+                    MessageBox.Show(ex.Message);
+                }
+
+            }
+            else 
+                return;
         }
+
+        private async void OnAddNewOrderAsync()
+		{
+            if (NewOrderTableItem != null)
+            {
+                if (NewOrderTableItem.IsEmpty())
+                {
+                    MessageBox.Show("Fill all fields, please");
+
+                    return;
+                }
+
+                try
+                {
+                    // SqlConnection с помощью которого мы подключаеся к sql серверу 
+                    using (SqlConnection connection = new SqlConnection(_connectionString))
+                    {
+                        // Открываем подключение
+                        await connection.OpenAsync();
+
+                        //string messageText = "";
+
+                        NewOrderTableItem.UserId = GetIdOfUserByNumber(NewOrderTableItem.UserNumber);
+
+                        SqlCommand useCommand = new SqlCommand($"USE {DefaultDatabaseName}\n", connection);
+                        useCommand.ExecuteNonQuery();
+
+                        // создаем команду
+                        SqlCommand command = new SqlCommand($"InsertInto{OrdersTableName}", connection);
+                        command.CommandType = System.Data.CommandType.StoredProcedure;
+
+                        SqlParameter customerIdparam = new SqlParameter("@customerId", NewOrderTableItem.UserId);
+                        command.Parameters.Add(customerIdparam);
+
+                        SqlParameter sumParam = new SqlParameter("@sum", NewOrderTableItem.Summ);
+                        command.Parameters.Add(sumParam);
+
+                        SqlParameter dateParam = new SqlParameter("@date", NewOrderTableItem.DateTime);
+                        command.Parameters.Add(dateParam);
+
+                        command.ExecuteNonQuery();
+
+                        AddNewOrderToList(connection);
+
+                        UpdateParametersLabel();
+
+                        DatabaseIsFilled = true;
+
+                        string messageText = $"New order was successfully added";
+                        MessageBox.Show(messageText);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // сбрасываем значение т.к. нет подключения
+                    IsNotConnected = true;
+
+                    MessageBox.Show(ex.Message);
+                }
+
+            }
+            else
+                return;
+        }
+
+        private async void OnUserDataGridDeleteKeyDownAsync()
+		{
+            if (SelectedUserTableItem != null)
+            {
+                //if (NewOrderTableItem.IsEmpty())
+                //{
+                //    MessageBox.Show("Fill all fields, please");
+
+                //    return;
+                //}
+
+                try
+                {
+					foreach (var userTableItem in UserTableItems)
+					{
+                        if(userTableItem.Equals(SelectedUserTableItem))
+						{
+                            // SqlConnection с помощью которого мы подключаеся к sql серверу 
+                            using (SqlConnection connection = new SqlConnection(_connectionString))
+                            {
+                                // Открываем подключение
+                                await connection.OpenAsync();
+
+                                //string messageText = "";
+
+                                //NewOrderTableItem.UserId = GetIdOfUserByNumber(NewOrderTableItem.UserNumber);
+
+                                SqlCommand useCommand = new SqlCommand($"USE {DefaultDatabaseName}\n", connection);
+                                useCommand.ExecuteNonQuery();
+
+                                // создаем команду
+                                SqlCommand command = new SqlCommand($"Delete{UsersTableName}", connection);
+                                command.CommandType = System.Data.CommandType.StoredProcedure;
+
+                                SqlParameter idParam = new SqlParameter("@id", SelectedUserTableItem.Id);
+                                command.Parameters.Add(idParam);
+
+                                command.ExecuteNonQuery();
+
+                                _lastUserNumber = 0;
+                                _lastOrderNumber = 0;
+
+                                ReadUserTableItemsFromDB(connection);
+                                ReadOrderTableItemsFromDB(connection);
+
+                                UpdateParametersLabel();
+
+                                if(UserTableItems.Count == 0)
+								{
+                                    DatabaseIsFilled = false;
+                                    DatabaseIsNotFilled = true;
+								}
+
+                                string messageText = $"User was successfully deleted";
+                                MessageBox.Show(messageText);
+
+                                return;
+                            }
+						}
+
+                    }
+
+
+                }
+                catch (Exception ex)
+                {
+                    // сбрасываем значение т.к. нет подключения
+                    IsNotConnected = true;
+
+                    MessageBox.Show(ex.Message);
+                }
+
+            }
+            else
+                return;
+        }
+
+        private async void OnOrderDataGridDeleteKeyDownAsync()
+		{
+            if (SelectedOrderTableItem != null)
+            {
+                //if (NewOrderTableItem.IsEmpty())
+                //{
+                //    MessageBox.Show("Fill all fields, please");
+
+                //    return;
+                //}
+
+                try
+                {
+                    foreach (var orderTableItem in OrderTableItems)
+                    {
+                        if (orderTableItem.Equals(SelectedOrderTableItem))
+                        {
+                            // SqlConnection с помощью которого мы подключаеся к sql серверу 
+                            using (SqlConnection connection = new SqlConnection(_connectionString))
+                            {
+                                // Открываем подключение
+                                await connection.OpenAsync();
+
+                                //string messageText = "";
+
+                                //NewOrderTableItem.UserId = GetIdOfUserByNumber(NewOrderTableItem.UserNumber);
+
+                                SqlCommand useCommand = new SqlCommand($"USE {DefaultDatabaseName}\n", connection);
+                                useCommand.ExecuteNonQuery();
+
+                                // создаем команду
+                                SqlCommand command = new SqlCommand($"Delete{OrdersTableName}", connection);
+                                command.CommandType = System.Data.CommandType.StoredProcedure;
+
+                                SqlParameter idParam = new SqlParameter("@id", SelectedOrderTableItem.Id);
+                                command.Parameters.Add(idParam);
+
+                                command.ExecuteNonQuery();
+
+                                _lastOrderNumber = 0;
+
+                                ReadOrderTableItemsFromDB(connection);
+
+                                UpdateParametersLabel();
+
+                                if (OrderTableItems.Count == 0)
+                                {
+                                    DatabaseIsFilled = false;
+                                    DatabaseIsNotFilled = true;
+                                }
+
+                                string messageText = $"Order was successfully deleted";
+                                MessageBox.Show(messageText);
+
+                                return;
+                            }
+                        }
+
+                    }
+
+
+                }
+                catch (Exception ex)
+                {
+                    // сбрасываем значение т.к. нет подключения
+                    IsNotConnected = true;
+
+                    MessageBox.Show(ex.Message);
+                }
+
+            }
+            else
+                return;
+        }
+
 
         #endregion Обработчики DelegateCommands
 
@@ -481,6 +824,7 @@ namespace ADOHomework
 
         #endregion Методы-обработчики событий измениния свойств
 
+
         #region Функции по созданию БД, таблиц, хранимых процедур
 
         /// <summary>
@@ -521,9 +865,10 @@ namespace ADOHomework
                 $"CREATE TABLE {OrdersTableName}\n" +
                 "(\n" +
                     "Id int PRIMARY KEY IDENTITY NOT NULL,\n" +
-                    $"CustomerId int REFERENCES {UsersTableName} (Id) NOT NULL,\n" +
+                    $"CustomerId int,\n" +
                     "Summ int NOT NULL,\n" +
                     "[Date] datetime NOT NULL\n" +
+                    "FOREIGN KEY (CustomerId) REFERENCES Users (Id) ON DELETE CASCADE\n" +
                 ")";
 
             // Создаем новую комманду sql 
@@ -548,6 +893,34 @@ namespace ADOHomework
                             "AS\n" +
                                 $"INSERT INTO {UsersTableName}([Name], PhoneNumber)\n" +
                                 "VALUES(@name, @phoneNumber)\n";
+
+            SqlCommand command = new SqlCommand(createProcedureStr, connection);
+
+            command.ExecuteNonQuery();
+        }
+
+        private void CreateProcedureDeleteUsers(SqlConnection connection)
+        {
+            string createProcedureStr =
+                            $"CREATE PROCEDURE[dbo].[Delete{UsersTableName}]\n" +
+                                "@id int\n" +
+                            "AS\n" +
+                                $"DELETE {UsersTableName}\n" +
+                                "WHERE Id = @id\n";
+
+            SqlCommand command = new SqlCommand(createProcedureStr, connection);
+
+            command.ExecuteNonQuery();
+        }
+
+        private void CreateProcedureDeleteOrders(SqlConnection connection)
+        {
+            string createProcedureStr =
+                            $"CREATE PROCEDURE[dbo].[Delete{OrdersTableName}]\n" +
+                                "@id int\n" +
+                            "AS\n" +
+                                $"DELETE {OrdersTableName}\n" +
+                                "WHERE Id = @id\n";
 
             SqlCommand command = new SqlCommand(createProcedureStr, connection);
 
@@ -584,6 +957,8 @@ namespace ADOHomework
         {
             CreateProcedureInsertUsers(connection);
             CreateProcedureInsertOrders(connection);
+            CreateProcedureDeleteUsers(connection);
+            CreateProcedureDeleteOrders(connection);
         }
 
         private void FillAndReadTables(SqlConnection connection)
@@ -672,6 +1047,8 @@ namespace ADOHomework
         /// <param name="connection">SQL соединение</param>
         private void ReadUserTableItemsFromDB(SqlConnection connection)
         {
+            UserTableItems.Clear();
+
             string sqlExpression = $"USE {DefaultDatabaseName}\nSELECT * FROM {UsersTableName}";
 
             SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
@@ -734,6 +1111,8 @@ namespace ADOHomework
 
         private void ReadOrderTableItemsFromDB(SqlConnection connection)
 		{
+            OrderTableItems.Clear();
+
             OrderTableItem.MaxCustomerNumber = UserTableItems.Count;
 
             string sqlExpression = $"USE {DefaultDatabaseName}\nSELECT * FROM {OrdersTableName}";
@@ -885,5 +1264,73 @@ namespace ADOHomework
                 TotalOrderSum = 0;
             }
         }
+
+        private void ResetNewUserTableItem()
+        {
+            NewUserTableItem = new UserTableItem();
+        }
+
+        private void ResetNewOrderTableItem()
+        {
+            NewOrderTableItem = new OrderTableItem();
+        }
+
+        private void AddNewUserToList(SqlConnection connection)
+        {
+            // Команда для чтения последнего (наибольшего) id в таблице
+            SqlCommand selectIdCommand = new SqlCommand($"SELECT TOP 1 Id FROM {UsersTableName} ORDER BY Id DESC", connection);
+
+            selectIdCommand.ExecuteNonQuery();
+
+            int id = 0;
+
+            // из microsoft
+            // Предоставляет способ чтения потока строк последовательного доступа из базы данных SQL Server
+            using (SqlDataReader reader = selectIdCommand.ExecuteReader())
+            {
+                // Read - возвращеает true, если есть что читать, если нет - false
+                while (reader.Read())
+                {
+                    id = reader.GetInt32(0);
+                }
+            }
+
+			NewUserTableItem.Number = ++_lastUserNumber;
+            NewUserTableItem.Id = id;
+
+			UserTableItems.Add(NewUserTableItem);
+
+            ResetNewUserTableItem();
+
+        }
+
+        private void AddNewOrderToList(SqlConnection connection)
+        {
+            // Команда для чтения последнего (наибольшего) id в таблице
+            SqlCommand selectIdCommand = new SqlCommand($"SELECT TOP 1 Id FROM {OrdersTableName} ORDER BY Id DESC", connection);
+
+            selectIdCommand.ExecuteNonQuery();
+
+            int id = 0;
+
+            // из microsoft
+            // Предоставляет способ чтения потока строк последовательного доступа из базы данных SQL Server
+            using (SqlDataReader reader = selectIdCommand.ExecuteReader())
+            {
+                // Read - возвращеает true, если есть что читать, если нет - false
+                while (reader.Read())
+                {
+                    id = reader.GetInt32(0);
+                }
+            }
+
+            NewOrderTableItem.Number = ++_lastOrderNumber;
+            NewOrderTableItem.Id = id;
+
+            OrderTableItems.Add(NewOrderTableItem);
+
+            ResetNewOrderTableItem();
+        }
+
     }
 }

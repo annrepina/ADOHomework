@@ -44,9 +44,9 @@ namespace ADOHomework.Model.Wrappers
 			return false;
 		}
 
-		public bool isEmpty()
+		public bool IsEmpty()
 		{
-			if(Id == 0 && Name == "" && PhoneNumber == "" && Number == 0)
+			if(Name == "" || PhoneNumber == "")
 				return true;
 
 			return false;

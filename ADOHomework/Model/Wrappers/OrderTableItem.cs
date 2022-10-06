@@ -75,5 +75,10 @@ namespace ADOHomework.Model.Wrappers
 
             return false;
         }
+
+		public bool IsEmpty()
+		{
+			return UserNumber == 0 || Summ == 0 || DateTime == DateTime.MinValue;
+		}
 	}
 }

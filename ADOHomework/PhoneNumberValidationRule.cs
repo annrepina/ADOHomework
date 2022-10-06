@@ -36,7 +36,7 @@ namespace ADOHomework
 
 			try
 			{			
-				if (value != null && value.ToString().Length > 0 && Int64.Parse(value.ToString()) < MaxNumber)
+				if (value != null && value.ToString().Length > 0 && Int64.Parse(value.ToString()) <= MaxNumber)
 					success = Int64.TryParse((string)value, out phoneNumber);
 			}
 			catch (Exception e)

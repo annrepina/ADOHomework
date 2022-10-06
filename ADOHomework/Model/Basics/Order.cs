@@ -14,7 +14,7 @@ namespace ADOHomework.Model.basics
 			Id = 0;
 			Summ = 0;
 			UserId = 0;
-			DateTime = DateTime.Now;
+			DateTime = DateTime.MinValue;
 		}
 
 		public Order(int id, int userId, int summ, DateTime dateTime)

@@ -47,7 +47,7 @@ namespace ADOHomework.Model.Wrappers
 			{
 				_number = value;
 
-				OnPropertyChanged(nameof(Number));
+                OnPropertyChanged(nameof(Number));
 			}
 		}
 
@@ -59,8 +59,21 @@ namespace ADOHomework.Model.Wrappers
 			{
 				_userNumber = value;
 
+
+
 				OnPropertyChanged(nameof(UserNumber));
 			}
 		}
+
+		public override bool Equals(object? obj)
+		{
+            if (obj == null)
+                return false;
+
+            if (obj is OrderTableItem item)
+                return UserNumber == item.UserNumber && Id == item.Id && UserId == item.UserId && Summ == item.Summ && DateTime == item.DateTime;
+
+            return false;
+        }
 	}
 }

@@ -244,9 +244,12 @@ namespace ADOHomework
                         // если они чем-то отличаются
                         if (!tempUserTableItems[i].Equals(UserTableItems[i]))
                         {
+                            int id = UserTableItems[i].Id;
+
                             string sqlExpression = $"USE {DefaultDatabaseName}\n" +
                                                    $"UPDATE {UsersTableName}\n" +
-                                                   $"SET [Name] = '{UserTableItems[i].Name}', PhoneNumber = '{UserTableItems[i].PhoneNumber}'";
+                                                   $"SET [Name] = '{UserTableItems[i].Name}', PhoneNumber = '{UserTableItems[i].PhoneNumber}'\n" +
+                                                   $"WHERE Id = {id}";
 
                             SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
 
@@ -303,10 +306,17 @@ namespace ADOHomework
                         // если они чем-то отличаются
                         if (!tempOrderTableItems[i].Equals(OrderTableItems[i]))
                         {
-                    
+                            if (tempOrderTableItems[i].UserNumber != OrderTableItems[i].UserNumber)
+                            {
+                                OrderTableItems[i].UserId = GetIdOfUserByNumber(OrderTableItems[i].UserNumber);
+                            }
+
+                            int id = OrderTableItems[i].Id;
+
                             string sqlExpression = $"USE {DefaultDatabaseName}\n" +
                                                    $"UPDATE {OrdersTableName}\n" +
-                                                   $"SET CustomerId = {OrderTableItems[i].UserId}, Summ = {OrderTableItems[i].Summ}, Date = '{OrderTableItems[i].DateTime}'";
+                                                   $"SET CustomerId = {OrderTableItems[i].UserId}, Summ = {OrderTableItems[i].Summ}, Date = '{OrderTableItems[i].DateTime}'\n" +
+                                                   $"WHERE Id = {id}";
 
                             SqlCommand sqlCommand = new SqlCommand(sqlExpression, connection);
 
@@ -686,5 +696,16 @@ namespace ADOHomework
 
             return 0;
 		}
+
+        public int GetIdOfUserByNumber(int number)
+        {
+            foreach (var user in UserTableItems)
+            {
+                if (user.Number == number)
+                    return user.Id;
+            }
+
+            return 0;
+        }
     }
 }

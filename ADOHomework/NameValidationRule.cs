@@ -15,7 +15,7 @@ namespace ADOHomework
         public override ValidationResult Validate(object value, CultureInfo cultureInfo)
         {
             // Имя  фамилия с большой буквы и между ними пробел, например Ann Repina
-            Regex regex = new Regex(@"^[A-Z]{1}[a-z]*\s[A-Z]{1}[a-z]*");
+            Regex regex = new Regex(@"^[A-Z]{1}[a-z]*\s[A-Z]{1}[a-z]*$");
 
             if (value != null && value.ToString().Length > 0)
             {

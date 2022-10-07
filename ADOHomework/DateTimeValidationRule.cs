@@ -10,8 +10,17 @@ using System.Windows.Controls;
 
 namespace ADOHomework
 {
+    /// <summary>
+    /// Правило для валидации даты заказа
+    /// </summary>
     public class DateTimeValidationRule : ValidationRule
     {
+        /// <summary>
+        /// Проверяет дату заказа на корректнось
+        /// </summary>
+        /// <param name="value">Проверяемое значение</param>
+        /// <param name="cultureInfo">Информация о культуре</param>
+        /// <returns></returns>
         public override ValidationResult Validate(object value, CultureInfo cultureInfo)
         {
             if(value != null && value.ToString().Length > 0)
@@ -26,6 +35,7 @@ namespace ADOHomework
 
                 if (dateStr.Contains(" AM"))
                     timeOfDay = " AM";
+
                 else if(dateStr.Contains(" PM"))
                     timeOfDay = " PM";
 
@@ -39,6 +49,7 @@ namespace ADOHomework
                     date = DateTime.ParseExact(dateStr, dateFormats, CultureInfo.InvariantCulture);
                     return ValidationResult.ValidResult;
                 }
+
                 catch (Exception e)
                 {
                     MessageBox.Show("Date is incorrect. Please enter mm/dd/yyyy hh:mm:ss AM/PM");

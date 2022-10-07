@@ -9,8 +9,17 @@ using System.Windows.Controls;
 
 namespace ADOHomework
 {
+    /// <summary>
+    /// Правило проверки суммы заказа на коректность 
+    /// </summary>
     public class SummValidationRule : ValidationRule
     {
+        /// <summary>
+        /// Проверяет сумму заказа на коректность 
+        /// </summary>
+        /// <param name="value">Проверяемое значение</param>
+        /// <param name="cultureInfo">Информация о культуре</param>
+        /// <returns></returns>
         public override ValidationResult Validate(object value, CultureInfo cultureInfo)
         {
             bool success = false;
@@ -29,7 +38,6 @@ namespace ADOHomework
                 return new ValidationResult(false, "Summ is null or empty");
             }
 
-
             if (success)
             {
                 if (res > 0)
@@ -42,14 +50,11 @@ namespace ADOHomework
                     return new ValidationResult(false, "Summ has to be positive");
                 }
             }
-
-
             else
             {
                 MessageBox.Show("Input value has illegal characters or too long");
                 return new ValidationResult(false, "Input value has illegal characters");
             }
-
         }
     }
 }

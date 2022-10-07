@@ -10,8 +10,17 @@ using System.Windows.Controls;
 
 namespace ADOHomework
 {
+    /// <summary>
+    /// Правило проверки имени пользователя на коректность
+    /// </summary>
     public class NameValidationRule : ValidationRule
     {
+        /// <summary>
+        /// Проверяет имя пользователя на корректность
+        /// </summary>
+        /// <param name="value">Проверяемое значение</param>
+        /// <param name="cultureInfo">Информация о культуре</param>
+        /// <returns></returns>
         public override ValidationResult Validate(object value, CultureInfo cultureInfo)
         {
             // Имя  фамилия с большой буквы и между ними пробел, например Ann Repina
@@ -36,7 +45,6 @@ namespace ADOHomework
                 MessageBox.Show("Name is null or empty");
                 return new ValidationResult(false, "Name is null or empty");
             }
-
         }
     }
 }

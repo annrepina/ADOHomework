@@ -1,4 +1,5 @@
-﻿using ADOHomework.Model.basics;
+﻿using ADOHomework.Builders;
+using ADOHomework.Model.basics;
 using ADOHomework.Model.Wrappers;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
@@ -18,11 +19,14 @@ using System.Windows.Shell;
 
 namespace ADOHomework
 {
-	/// <summary>
-	/// ViewModel
-	/// </summary>
-	public class MainWindowViewModel : INotifyPropertyChanged
+    /// <summary>
+    /// ViewModel
+    /// </summary>
+    public class MainWindowViewModel : INotifyPropertyChanged
     {
+        /// <summary>
+        /// Конструктор по умолчанию
+        /// </summary>
         public MainWindowViewModel()
         {
             OnConnectToServerCommand = new DelegateCommand(OnConnectToServerAsync);
@@ -31,37 +35,61 @@ namespace ADOHomework
             OnAddNewOrderCommand = new DelegateCommand(OnAddNewOrderAsync);
             OnUserDataGridDeleteKeyDownCommand = new DelegateCommand(OnUserDataGridDeleteKeyDownAsync);
             OnOrderDataGridDeleteKeyDownCommand = new DelegateCommand(OnOrderDataGridDeleteKeyDownAsync);
+
             _serverName = "";
             _connectionString = "";
+
             _isNotConnected = true;
             _hasCorrectServerName = false;
             _databaseIsNotFilled = true;
             _databaseIsFilled = false;
             _canConnect = false;
             _canAddNewUser = false;
+
             UserTableItems = new ObservableCollection<UserTableItem>();
             OrderTableItems = new ObservableCollection<OrderTableItem>();
             UserTableItems.CollectionChanged += OnUserTableItemsListPropertyChanged;
             OrderTableItems.CollectionChanged += OnOrderTableItemsListPropertyChanged;
-
-            _lastUserNumber = 0;
-            _lastOrderNumber = 0;
-            _minOrderSum = 0;
-            _maxOrderSum = 0;
-            _totalOrderSum = 0;
 
             NewUserTableItem = new UserTableItem();
             NewOrderTableItem = new OrderTableItem();
             SelectedUserTableItem = new UserTableItem();
             SelectedOrderTableItem = new OrderTableItem();
 
+            _lastUserNumber = 0;
+            _lastOrderNumber = 0;
+            _minOrderSum = 0;
+            _maxOrderSum = 0;
+            _totalOrderSum = 0;
         }
 
+        #region Поля
+
+        /// <summary>
+        /// Имя сервера
+        /// </summary>
         private string _serverName;
+
+        /// <summary>
+        /// Строка подключения
+        /// </summary>
         private string _connectionString;
+
+        /// <summary>
+        /// Не подключено к серверу?
+        /// </summary>
 		private bool _isNotConnected;
+
+        /// <summary>
+        /// Есть корректная строка подключения к серверу?
+        /// </summary>
 		private bool _hasCorrectServerName;
+
+        /// <summary>
+        /// Подключено к серверу?
+        /// </summary>
         private bool _isConnected;
+
         /// <summary>
         /// Последний номер пользователя в таблице
         /// </summary>
@@ -71,39 +99,115 @@ namespace ADOHomework
         /// Последний номер заказа в таблице
         /// </summary>
         private int _lastOrderNumber;
+
+        /// <summary>
+        /// База данных не заполнена?
+        /// </summary>
         private bool _databaseIsNotFilled;
+
+        /// <summary>
+        /// База данных заполнена?
+        /// </summary>
         private bool _databaseIsFilled;
+
+        /// <summary>
+        /// Можно подключиться?
+        /// </summary>
         private bool _canConnect;
+
+        /// <summary>
+        /// Можно добавить пользователя?
+        /// </summary>
+        private bool _canAddNewUser;
+
+        /// <summary>
+        /// Минимальная сумма заказа
+        /// </summary>
         private int _minOrderSum;
+
+        /// <summary>
+        /// Максимальная сумма заказа
+        /// </summary>
         private int _maxOrderSum;
+
+        /// <summary>
+        /// Общая сумма заказа
+        /// </summary>
         private ulong _totalOrderSum;
-		private bool _canAddNewUser;
+
+        /// <summary>
+        /// Новый пользователь в таблице
+        /// </summary>
 		private UserTableItem _newUserTableItem;
+
+        /// <summary>
+        /// Новый заказ в таблице
+        /// </summary>
 		private OrderTableItem _newOrderTableItem;
+
+        /// <summary>
+        /// Выбранный пользователь в таблице
+        /// </summary>
 		private UserTableItem _selectedUserTableItem;
+
+        /// <summary>
+        /// выбранный заказ в таблице
+        /// </summary>
 		private OrderTableItem _selectedOrderTableItem;
 
+        #endregion Поля
 
 
 		#region Константы
 
+        /// <summary>
+        /// Число пользователей по умолчанию
+        /// </summary>
 		private const int DefaultNumberOfUsers = 10;
+
+        /// <summary>
+        /// Число заказов по умолчанию
+        /// </summary>
         private const int DefaultNumberOfOrders = 15;
 
+        /// <summary>
+        /// название БД по умолчанию
+        /// </summary>
         private const string DefaultDatabaseName = "ADOHomework";
+
+        /// <summary>
+        /// Название таблицы пользователей по умолчанию
+        /// </summary>
         private const string UsersTableName = "Users";
+
+        /// <summary>
+        /// Название таблицы заказов по умолчанию
+        /// </summary>
         private const string OrdersTableName = "Orders";
 
         #endregion Константы
 
+
         #region Свойства
 
+        /// <summary>
+        /// Событие изменения свойств
+        /// </summary>
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        /// <summary>
+        /// Обозреваемая коллекция элементы таблицы юзеров
+        /// </summary>
         public ObservableCollection<UserTableItem> UserTableItems{ get; set; }
 
+        /// <summary>
+        /// Обозреваемая коллекция элементы таблицы заказов
+        /// </summary>
         public ObservableCollection<OrderTableItem> OrderTableItems{ get; set; }
 
+        /// <summary>
+        /// Новый элемент таблицы пользователей
+        /// </summary>
         public UserTableItem NewUserTableItem 
         {
             get => _newUserTableItem;
@@ -116,6 +220,9 @@ namespace ADOHomework
 			}
         }
 
+        /// <summary>
+        /// Новый элемент таблицы заказов
+        /// </summary>
         public OrderTableItem NewOrderTableItem 
         {
             get => _newOrderTableItem;
@@ -128,6 +235,9 @@ namespace ADOHomework
             }
         }
 
+        /// <summary>
+        /// Выбранный элемент таблицы пользователей
+        /// </summary>
         public UserTableItem SelectedUserTableItem
 		{
             get => _selectedUserTableItem;
@@ -140,6 +250,9 @@ namespace ADOHomework
 			}
         }
 
+        /// <summary>
+        /// Выбраный элемент таблицы заказов
+        /// </summary>
         public OrderTableItem SelectedOrderTableItem
         {
             get => _selectedOrderTableItem;
@@ -152,6 +265,9 @@ namespace ADOHomework
             }
         }
 
+        /// <summary>
+        /// Минимальная сумма заказов
+        /// </summary>
         public int MinOrderSum
         {
             get => _minOrderSum;
@@ -164,6 +280,9 @@ namespace ADOHomework
             }
         }
 
+        /// <summary>
+        /// Максимальная сумма заказов
+        /// </summary>
         public int MaxOrderSum
         {
             get => _maxOrderSum;
@@ -176,6 +295,9 @@ namespace ADOHomework
             }
         }
 
+        /// <summary>
+        /// Общая сумма заказов
+        /// </summary>
         public ulong TotalOrderSum
         {
             get => _totalOrderSum;
@@ -233,8 +355,6 @@ namespace ADOHomework
 
                 CanConnect = _isNotConnected && _hasCorrectServerName;
 
-                //CanTryToConnect = _hasCorrectConnectionString && _hasDataBaseName;
-
                 OnPropertyChanged(nameof(HasCorrectServerName));
             }      
         }
@@ -254,6 +374,9 @@ namespace ADOHomework
             }
         }
 
+        /// <summary>
+        /// Можем добавить нового пользователя
+        /// </summary>
         public bool CanAddNewUser
 		{
             get => _canAddNewUser;
@@ -267,7 +390,7 @@ namespace ADOHomework
         }
 
         /// <summary>
-        /// Стока подключения
+        /// Имя сервера
         /// </summary>
         public string ServerName
 		{
@@ -283,6 +406,9 @@ namespace ADOHomework
             }
 		}
 
+        /// <summary>
+        /// База данных не заполнена?
+        /// </summary>
         public bool DatabaseIsNotFilled
         {
             get => _databaseIsNotFilled;
@@ -295,6 +421,9 @@ namespace ADOHomework
             }
         }
 
+        /// <summary>
+        /// База данных заполнена?
+        /// </summary>
         public bool DatabaseIsFilled
         {
             get => _databaseIsFilled;
@@ -312,16 +441,34 @@ namespace ADOHomework
 
         #region DelegateCommands
 
+        /// <summary>
+        /// Комманда по нажатию на кнопку-заполнить БД
+        /// </summary>
         public DelegateCommand OnFillDatabaseCommand { get; }
 
+        /// <summary>
+        /// Комманда по нажатию на кнопку подключиться к серверу
+        /// </summary>
         public DelegateCommand OnConnectToServerCommand { get; }
 
+        /// <summary>
+        /// Комманда по нажатию на кнопку-добавить нового пользователя
+        /// </summary>
         public DelegateCommand OnAddNewUserCommand { get; }
 
+        /// <summary>
+        /// Комманда по нажатию на кнопку-добавить новый заказ
+        /// </summary>
         public DelegateCommand OnAddNewOrderCommand { get; }
 
+        /// <summary>
+        /// Команда по нажатию кнопки delete при выделенном пользователе в таблице
+        /// </summary>
         public DelegateCommand OnUserDataGridDeleteKeyDownCommand { get; }
 
+        /// <summary>
+        /// Команда по нажатию кнопки delete при выделенном заказа в таблице
+        /// </summary>
         public DelegateCommand OnOrderDataGridDeleteKeyDownCommand { get; }
 
         #endregion DelegateCommands
@@ -329,6 +476,9 @@ namespace ADOHomework
 
         #region Обработчики DelegateCommands
 
+        /// <summary>
+        /// Обработчик команды OnConnectToServerCommand
+        /// </summary>
         private async void OnConnectToServerAsync()
         {
             try

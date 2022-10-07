@@ -12,10 +12,13 @@ namespace ADOHomework.Model.basics
 	/// </summary>
 	public class Order : INotifyPropertyChanged
 	{
-		/// <summary>
-		/// Конструктор по умолчанию
-		/// </summary>
-		public Order()
+
+        #region Конструкторы
+
+        /// <summary>
+        /// Конструктор по умолчанию
+        /// </summary>
+        public Order()
 		{
 			Id = 0;
 			Summ = 0;
@@ -38,10 +41,15 @@ namespace ADOHomework.Model.basics
 			DateTime = dateTime;
 		}
 
-		/// <summary>
-		/// Идентификатор
-		/// </summary>
-		private int _id;
+        #endregion Конструкторы
+
+
+        #region Поля
+
+        /// <summary>
+        /// Идентификатор
+        /// </summary>
+        private int _id;
 
 		/// <summary>
 		/// Идентификатор пользователя - покупателя
@@ -58,10 +66,15 @@ namespace ADOHomework.Model.basics
 		/// </summary>
 		private DateTime _dateTime;
 
-		/// <summary>
-		/// Свойство - идентификатор
-		/// </summary>
-		public int Id
+        #endregion Поля
+
+
+        #region Свойства
+
+        /// <summary>
+        /// Свойство - идентификатор
+        /// </summary>
+        public int Id
 		{
 			get => _id;
 
@@ -118,11 +131,26 @@ namespace ADOHomework.Model.basics
 			}
 		}
 
-		public event PropertyChangedEventHandler? PropertyChanged;
+        #endregion Свойства
 
-		protected void OnPropertyChanged(string propName)
+
+        #region Реализация INotifyPropertyChanged 
+
+        /// <summary>
+        /// Событие изменения свойств
+        /// </summary>
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        /// <summary>
+        /// Метод, вызывающий событие PropertyChanged
+        /// </summary>
+        /// <param name="propName">Имя измененного свойства</param>
+        protected void OnPropertyChanged(string propName)
 		{
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
 		}
-	}
+
+        #endregion Реализация INotifyPropertyChanged
+
+    }
 }

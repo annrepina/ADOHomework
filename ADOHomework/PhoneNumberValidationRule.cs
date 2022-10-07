@@ -10,22 +10,22 @@ using System.Windows.Controls;
 
 namespace ADOHomework
 {
+    /// <summary>
+    /// Правило проверки номера телефона пользователя на коректность
+    /// </summary>
     public class PhoneNumberValidationRule : ValidationRule
     {
+        /// <summary>
+        /// Константа максимальной большой по значению номер телефона в виде long
+        /// </summary>
         public const long MaxNumber = 89999999999;
 
-		//public PhoneNumberValidationRule()
-		//{
-  //          _errorMessage = "";
-  //      }
-
-  //      private string _errorMessage;
-  //      public string ErrorMessage
-  //      {
-  //          get { return _errorMessage; }
-  //          set { _errorMessage = value; }
-  //      }
-
+        /// <summary>
+        /// Проверяет номер телефона пользователя на коректность
+        /// </summary>
+        /// <param name="value">Проверяемое значение</param>
+        /// <param name="cultureInfo">Информация о культуре</param>
+        /// <returns></returns>
         public override ValidationResult Validate(object value, CultureInfo cultureInfo)
         {
             long phoneNumber = 0L;
@@ -54,7 +54,6 @@ namespace ADOHomework
                 MessageBox.Show("Phone number is not correct. It has to begin from '8' and has 11 digits.");
                 return new ValidationResult(false, "Phone number is not correct. It has to begin from '8' and has 11 digits.");
             }
-
         }
     }
 }

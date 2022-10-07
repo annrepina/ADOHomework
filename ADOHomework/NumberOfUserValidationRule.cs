@@ -11,20 +11,32 @@ using System.Windows.Controls;
 
 namespace ADOHomework
 {
+    /// <summary>
+    /// Правило проверки номера пользователя в таблице на коректность
+    /// </summary>
     public class NumberOfUserValidationRule : ValidationRule
     {
+        /// <summary>
+        /// Максимальный номер пользователя в таблице
+        /// </summary>
         private int _maxNumber;
 
+        /// <summary>
+        /// Конструктор по умолчанию
+        /// </summary>
         public NumberOfUserValidationRule()
         {
             _maxNumber = 0;
         }
 
+        /// <summary>
+        /// Проверяет номер пользователя в таблице на коректность
+        /// </summary>
+        /// <param name="value">Проверяемое значение</param>
+        /// <param name="cultureInfo">Информация о культуре</param>
+        /// <returns></returns>
         public override ValidationResult Validate(object value, CultureInfo cultureInfo)
         {
-            //// Число
-            //Regex regex = new Regex(@"\d*");
-
             bool success = false;
 
             int res = 0;
@@ -56,13 +68,11 @@ namespace ADOHomework
                 }
             }
 
-
             else
             {
                 MessageBox.Show("Input value has illegal characters");
                 return new ValidationResult(false, "Input value has illegal characters");
             }
-
         }
     }
 }

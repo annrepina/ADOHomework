@@ -26,10 +26,5 @@ namespace ADOHomework
 
             DataContext = new MainWindowViewModel();
         }
-
-        //private void TextBox_Error(object sender, ValidationErrorEventArgs e)
-        //{
-        //    MessageBox.Show(e.Error.ErrorContent.ToString());
-        //}
     }
 }

@@ -46,7 +46,7 @@
             <Label Grid.Row="2" Content="Total order sum:" Visibility="{Binding DatabaseIsFilled, Converter={StaticResource BooleanToVisibilityConverter}}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"/>
             <TextBlock Grid.Row="2" Grid.Column="1"  Text="{Binding TotalOrderSum, Mode=TwoWay}" Visibility="{Binding DatabaseIsFilled, Converter={StaticResource BooleanToVisibilityConverter}, Mode=TwoWay}" TextAlignment="Left" VerticalAlignment="Center"/>
         </Grid>
-        <DataGrid Grid.Column="1" Grid.Row="1" Grid.RowSpan="5" Margin="10, 0, 10 ,0" SelectedItem="{Binding SelectedUserTableItem}" ItemsSource="{Binding UserTableItems, Mode=TwoWay}" Visibility="{Binding IsConnected}" AutoGenerateColumns="False" CanUserDeleteRows="False" CanUserAddRows="False">
+        <DataGrid Grid.Column="1" Grid.Row="1" Grid.RowSpan="5" Margin="10, 0, 10 ,0" SelectedItem="{Binding SelectedUserTableItem}" ItemsSource="{Binding UserTableItems, Mode=TwoWay}" Visibility="{Binding IsConnected}" AutoGenerateColumns="False" CanUserDeleteRows="False" CanUserAddRows="False" SelectionMode="Single">
             <DataGrid.Columns>
                 <DataGridTextColumn Width="*" Header="№" Binding="{Binding Number, Mode=TwoWay}" IsReadOnly="True"/>
                 <DataGridTextColumn Width="3*" Header="Name">
@@ -105,7 +105,7 @@
                 </TextBox.Text>
             </TextBox>
         </Grid>
-        <DataGrid Grid.Column="2" Grid.Row="1" Grid.RowSpan="5" Margin="10, 0, 10 ,0" SelectedValue="{Binding SelectedOrderTableItem}" ItemsSource="{Binding OrderTableItems, Mode=TwoWay}" Visibility="{Binding IsConnected}" AutoGenerateColumns="False" CanUserAddRows="False">
+        <DataGrid Grid.Column="2" Grid.Row="1" Grid.RowSpan="5" Margin="10, 0, 10 ,0" SelectedValue="{Binding SelectedOrderTableItem}" ItemsSource="{Binding OrderTableItems, Mode=TwoWay}" Visibility="{Binding IsConnected}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single">
             <DataGrid.Columns>
                 <DataGridTextColumn Width="*" Header="№" Binding="{Binding Number, Mode=TwoWay}" IsReadOnly="True"/>
                 <DataGridTextColumn Width="1.5*" Header="№ of User">

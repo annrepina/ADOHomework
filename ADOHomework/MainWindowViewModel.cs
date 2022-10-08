@@ -191,11 +191,6 @@ namespace ADOHomework
         #region Свойства
 
         /// <summary>
-        /// Событие изменения свойств
-        /// </summary>
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        /// <summary>
         /// Обозреваемая коллекция элементы таблицы юзеров
         /// </summary>
         public ObservableCollection<UserTableItem> UserTableItems{ get; set; }
@@ -519,6 +514,9 @@ namespace ADOHomework
             }
         }
 
+        /// <summary>
+        /// Обработчик команды OnFillDatabaseCommand
+        /// </summary>
         private async void OnFillDatabaseAsync()
         {
             try
@@ -552,6 +550,9 @@ namespace ADOHomework
             }
         }
 
+        /// <summary>
+        /// Обработчик команды OnAddNewUserCommand
+        /// </summary>
         private async void OnAddNewUserAsync()
         {
             if (NewUserTableItem != null)
@@ -603,12 +604,15 @@ namespace ADOHomework
 
                     MessageBox.Show(ex.Message);
                 }
-
             }
+
             else 
                 return;
         }
 
+        /// <summary>
+        /// Обработчик команды OnAddNewOrderCommand
+        /// </summary>
         private async void OnAddNewOrderAsync()
 		{
             if (NewOrderTableItem != null)
@@ -673,17 +677,13 @@ namespace ADOHomework
                 return;
         }
 
+        /// <summary>
+        /// Обработчик команды OnUserDataGridDeleteKeyDownCommand
+        /// </summary>
         private async void OnUserDataGridDeleteKeyDownAsync()
 		{
             if (SelectedUserTableItem != null)
             {
-                //if (NewOrderTableItem.IsEmpty())
-                //{
-                //    MessageBox.Show("Fill all fields, please");
-
-                //    return;
-                //}
-
                 try
                 {
 					foreach (var userTableItem in UserTableItems)
@@ -695,10 +695,6 @@ namespace ADOHomework
                             {
                                 // Открываем подключение
                                 await connection.OpenAsync();
-
-                                //string messageText = "";
-
-                                //NewOrderTableItem.UserId = GetIdOfUserByNumber(NewOrderTableItem.UserNumber);
 
                                 SqlCommand useCommand = new SqlCommand($"USE {DefaultDatabaseName}\n", connection);
                                 useCommand.ExecuteNonQuery();
@@ -732,10 +728,7 @@ namespace ADOHomework
                                 return;
                             }
 						}
-
                     }
-
-
                 }
                 catch (Exception ex)
                 {
@@ -744,23 +737,18 @@ namespace ADOHomework
 
                     MessageBox.Show(ex.Message);
                 }
-
             }
             else
                 return;
         }
 
+        /// <summary>
+        /// Обработчик команды OnOrderDataGridDeleteKeyDownCommand
+        /// </summary>
         private async void OnOrderDataGridDeleteKeyDownAsync()
 		{
             if (SelectedOrderTableItem != null)
             {
-                //if (NewOrderTableItem.IsEmpty())
-                //{
-                //    MessageBox.Show("Fill all fields, please");
-
-                //    return;
-                //}
-
                 try
                 {
                     foreach (var orderTableItem in OrderTableItems)
@@ -772,10 +760,6 @@ namespace ADOHomework
                             {
                                 // Открываем подключение
                                 await connection.OpenAsync();
-
-                                //string messageText = "";
-
-                                //NewOrderTableItem.UserId = GetIdOfUserByNumber(NewOrderTableItem.UserNumber);
 
                                 SqlCommand useCommand = new SqlCommand($"USE {DefaultDatabaseName}\n", connection);
                                 useCommand.ExecuteNonQuery();
@@ -807,10 +791,7 @@ namespace ADOHomework
                                 return;
                             }
                         }
-
                     }
-
-
                 }
                 catch (Exception ex)
                 {
@@ -819,25 +800,32 @@ namespace ADOHomework
 
                     MessageBox.Show(ex.Message);
                 }
-
             }
             else
                 return;
         }
-
 
         #endregion Обработчики DelegateCommands
 
 
         #region Методы-обработчики событий измениния свойств
 
+        /// <summary>
+        /// Событие изменения свойств
+        /// </summary>
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        /// <summary>
+        /// Метод, вызывающий событие PropertyChanged
+        /// </summary>
+        /// <param name="propName">Имя измененного свойства</param>
         private void OnPropertyChanged(string propName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
 
         /// <summary>
-        /// Когда изменяется список пользователей
+        /// Когда изменяется список пользователей, добавление, удаление, перемещение элементов в списке
         /// </summary>
         /// <param name="sender">Объект вызваваший событие</param>
         /// <param name="e">Содержит данные о событии</param>
@@ -860,6 +848,11 @@ namespace ADOHomework
             }          
 		}
 
+        /// <summary>
+        /// Когда изменяется список пользователей - изменение конкретного элемента
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private async void OnUserTableItemsPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             ObservableCollection<UserTableItem> tempUserTableItems = new ObservableCollection<UserTableItem>();
@@ -903,6 +896,11 @@ namespace ADOHomework
             }
         }
 
+        /// <summary>
+        /// Когда изменяется список пользователей, добавление, удаление, перемещение элементов в списке
+        /// </summary>
+        /// <param name="sender">Объект вызваваший событие</param>
+        /// <param name="e">Содержит данные о событии</param>
         private void OnOrderTableItemsListPropertyChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.OldItems != null)
@@ -922,6 +920,11 @@ namespace ADOHomework
             }
         }
 
+        /// <summary>
+        /// Когда изменяется список пользователей - изменение конкретного элемента
+        /// </summary>
+        /// <param name="sender">Объект вызваваший событие</param>
+        /// <param name="e">Содержит данные о событии</param>
         private async void OnOrderTableItemsPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             ObservableCollection<OrderTableItem> tempOrderTableItems = new ObservableCollection<OrderTableItem>();
@@ -971,7 +974,6 @@ namespace ADOHomework
         }
 
 
-
         #endregion Методы-обработчики событий измениния свойств
 
 
@@ -987,12 +989,7 @@ namespace ADOHomework
             string sqlExpression = $"CREATE DATABASE {DefaultDatabaseName}";
 
             // Создаем новую комманду sql 
-            // Задаем текст запроса
-            // Создать БД
             SqlCommand command = new SqlCommand(sqlExpression, connection);
-
-            //SqlParameter nameParam = new SqlParameter("@databaseName", DefaultDatabaseName);
-            //command.Parameters.Add(nameParam);
 
             // Выполняем команду
             command.ExecuteNonQuery();
@@ -1022,8 +1019,6 @@ namespace ADOHomework
                 ")";
 
             // Создаем новую комманду sql 
-            // Задаем текст запроса
-            // Создать БД
             SqlCommand command = new SqlCommand(sqlExpression, connection);
 
             // Выполняем команду
@@ -1049,6 +1044,10 @@ namespace ADOHomework
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// Создать процедуру по удалению пользователей из таблицы
+        /// </summary>
+        /// <param name="connection">SQL соединение</param>
         private void CreateProcedureDeleteUsers(SqlConnection connection)
         {
             string createProcedureStr =
@@ -1063,6 +1062,10 @@ namespace ADOHomework
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// Создать процедуру по удалению заказов из таблицы
+        /// </summary>
+        /// <param name="connection">SQL соединение</param>
         private void CreateProcedureDeleteOrders(SqlConnection connection)
         {
             string createProcedureStr =
@@ -1097,12 +1100,20 @@ namespace ADOHomework
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// Создать БД и таблицы
+        /// </summary>
+        /// <param name="connection">SQL соединение</param>
         private void CreateDatabaseAndTables(SqlConnection connection)
 		{
             CreateDatabase(connection);
             CreateTables(connection);
         }
 
+        /// <summary>
+        /// Создать хранимые процедуры
+        /// </summary>
+        /// <param name="connection">SQL соединение</param>
         private void CreateStoredProcedures(SqlConnection connection)
         {
             CreateProcedureInsertUsers(connection);
@@ -1111,6 +1122,10 @@ namespace ADOHomework
             CreateProcedureDeleteOrders(connection);
         }
 
+        /// <summary>
+        /// Заполнить таблицы в бд и прочитать их
+        /// </summary>
+        /// <param name="connection"></param>
         private void FillAndReadTables(SqlConnection connection)
         {
             FillUsersTable(connection);
@@ -1155,6 +1170,11 @@ namespace ADOHomework
                 command.ExecuteNonQuery();
             }
         }
+
+        /// <summary>
+        /// Заполнить таблицу заказов
+        /// </summary>
+        /// <param name="connection">SQL соединение</param>
         private void FillOrdersTable(SqlConnection connection)
         {
             OrderBuilder orderBuilder = new OrderBuilder();
@@ -1227,7 +1247,7 @@ namespace ADOHomework
         /// Чтение юзеров из ДБ и добавление их в передаваемый список userTableItems
         /// </summary>
         /// <param name="connection">SQL соединение</param>
-        /// <param name="userTableItems">Передаваемый список, в который предаются прочитанные зачения</param>
+        /// <param name="userTableItems">Список, в который передаются прочитанные значения</param>
         private void ReadUserTableItemsFromDB(SqlConnection connection, ref ObservableCollection<UserTableItem> userTableItems)
         {
             if (userTableItems == null)
@@ -1259,6 +1279,10 @@ namespace ADOHomework
             }
         }
 
+        /// <summary>
+        /// Чтение заказов из ДБ и добавление их в список OrderTableItems
+        /// </summary>
+        /// <param name="connection">SQL соединение</param>
         private void ReadOrderTableItemsFromDB(SqlConnection connection)
 		{
             OrderTableItems.Clear();
@@ -1291,6 +1315,11 @@ namespace ADOHomework
             }
         }
 
+        /// <summary>
+        /// Чтение заказов из ДБ и добавление их в передаваемый список orderTableItems
+        /// </summary>
+        /// <param name="connection">SQL соединение</param>
+        /// <param name="orderTableItems">Список, в который передаются прочитанные значения</param>
         private void ReadOrderTableItemsFromDB(SqlConnection connection, ref ObservableCollection<OrderTableItem> orderTableItems)
         {
             if (orderTableItems == null)
@@ -1386,6 +1415,11 @@ namespace ADOHomework
             return 0;
 		}
 
+        /// <summary>
+        /// Получить id пользователя по его номеру в таблице
+        /// </summary>
+        /// <param name="number"></param>
+        /// <returns></returns>
         public int GetIdOfUserByNumber(int number)
         {
             foreach (var user in UserTableItems)
@@ -1397,6 +1431,9 @@ namespace ADOHomework
             return 0;
         }
 
+        /// <summary>
+        /// Обновить параметры лейблов
+        /// </summary>
         private void UpdateParametersLabel()
         {
             if(!OrderTableItems.IsNullOrEmpty())
@@ -1415,16 +1452,26 @@ namespace ADOHomework
             }
         }
 
+        /// <summary>
+        /// Обновить нового пользователя в таблице
+        /// </summary>
         private void ResetNewUserTableItem()
         {
             NewUserTableItem = new UserTableItem();
         }
 
+        /// <summary>
+        /// Обновить новый заказ в таблице
+        /// </summary>
         private void ResetNewOrderTableItem()
         {
             NewOrderTableItem = new OrderTableItem();
         }
 
+        /// <summary>
+        /// Добавить нового пользователя в список
+        /// </summary>
+        /// <param name="connection">SQL соединение</param>
         private void AddNewUserToList(SqlConnection connection)
         {
             // Команда для чтения последнего (наибольшего) id в таблице
@@ -1451,9 +1498,12 @@ namespace ADOHomework
 			UserTableItems.Add(NewUserTableItem);
 
             ResetNewUserTableItem();
-
         }
 
+        /// <summary>
+        /// Добавить новый заказ в список
+        /// </summary>
+        /// <param name="connection">SQL соединение</param>
         private void AddNewOrderToList(SqlConnection connection)
         {
             // Команда для чтения последнего (наибольшего) id в таблице
@@ -1481,6 +1531,5 @@ namespace ADOHomework
 
             ResetNewOrderTableItem();
         }
-
     }
 }
